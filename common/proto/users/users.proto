@@ -43,7 +43,7 @@ message ReviewMessage {
     string message = 1;
 }
 
-service UserServvice {
+service UserService {
     rpc RegisterUser (UserRegistrationPayload) returns (RegisterMessage) {};
     rpc LoginUser (UserLoginPayload) returns (LoginResponse) {};
     rpc CreateRating (Review) returns (ReviewMessage){};

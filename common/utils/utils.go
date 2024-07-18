@@ -16,6 +16,7 @@ import (
 	"github.com/Ayobami6/common/config"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis/v8"
+	"github.com/hashicorp/consul/api"
 	"gopkg.in/gomail.v2"
 )
 
@@ -169,4 +170,25 @@ func GetTokenFromRequest(r *http.Request) (string, error) {
     }
 
     return "", errors.New("token not found in request")
+}
+
+func GetServiceAddress(serviceName string) (string, error) {
+	config := api.DefaultConfig()
+    client, err := api.NewClient(config)
+    if err != nil {
+        return "", err
+    }
+
+    services, _, err := client.Health().Service(serviceName, "", true, nil)
+    if err != nil {
+        return "", err
+    }
+
+    if len(services) == 0 {
+        return "", fmt.Errorf("service %s not found", serviceName)
+    }
+
+    service := services[0]
+    address := fmt.Sprintf("%s:%d", service.Service.Address, service.Service.Port)
+    return address, nil
 }

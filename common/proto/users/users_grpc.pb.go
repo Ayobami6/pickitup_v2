@@ -18,158 +18,158 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// UserServviceClient is the client API for UserServvice service.
+// UserServiceClient is the client API for UserService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type UserServviceClient interface {
+type UserServiceClient interface {
 	RegisterUser(ctx context.Context, in *UserRegistrationPayload, opts ...grpc.CallOption) (*RegisterMessage, error)
 	LoginUser(ctx context.Context, in *UserLoginPayload, opts ...grpc.CallOption) (*LoginResponse, error)
 	CreateRating(ctx context.Context, in *Review, opts ...grpc.CallOption) (*ReviewMessage, error)
 }
 
-type userServviceClient struct {
+type userServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewUserServviceClient(cc grpc.ClientConnInterface) UserServviceClient {
-	return &userServviceClient{cc}
+func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
+	return &userServiceClient{cc}
 }
 
-func (c *userServviceClient) RegisterUser(ctx context.Context, in *UserRegistrationPayload, opts ...grpc.CallOption) (*RegisterMessage, error) {
+func (c *userServiceClient) RegisterUser(ctx context.Context, in *UserRegistrationPayload, opts ...grpc.CallOption) (*RegisterMessage, error) {
 	out := new(RegisterMessage)
-	err := c.cc.Invoke(ctx, "/proto.UserServvice/RegisterUser", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.UserService/RegisterUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *userServviceClient) LoginUser(ctx context.Context, in *UserLoginPayload, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *userServiceClient) LoginUser(ctx context.Context, in *UserLoginPayload, opts ...grpc.CallOption) (*LoginResponse, error) {
 	out := new(LoginResponse)
-	err := c.cc.Invoke(ctx, "/proto.UserServvice/LoginUser", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.UserService/LoginUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *userServviceClient) CreateRating(ctx context.Context, in *Review, opts ...grpc.CallOption) (*ReviewMessage, error) {
+func (c *userServiceClient) CreateRating(ctx context.Context, in *Review, opts ...grpc.CallOption) (*ReviewMessage, error) {
 	out := new(ReviewMessage)
-	err := c.cc.Invoke(ctx, "/proto.UserServvice/CreateRating", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.UserService/CreateRating", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// UserServviceServer is the server API for UserServvice service.
-// All implementations must embed UnimplementedUserServviceServer
+// UserServiceServer is the server API for UserService service.
+// All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
-type UserServviceServer interface {
+type UserServiceServer interface {
 	RegisterUser(context.Context, *UserRegistrationPayload) (*RegisterMessage, error)
 	LoginUser(context.Context, *UserLoginPayload) (*LoginResponse, error)
 	CreateRating(context.Context, *Review) (*ReviewMessage, error)
-	mustEmbedUnimplementedUserServviceServer()
+	mustEmbedUnimplementedUserServiceServer()
 }
 
-// UnimplementedUserServviceServer must be embedded to have forward compatible implementations.
-type UnimplementedUserServviceServer struct {
+// UnimplementedUserServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedUserServiceServer struct {
 }
 
-func (UnimplementedUserServviceServer) RegisterUser(context.Context, *UserRegistrationPayload) (*RegisterMessage, error) {
+func (UnimplementedUserServiceServer) RegisterUser(context.Context, *UserRegistrationPayload) (*RegisterMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterUser not implemented")
 }
-func (UnimplementedUserServviceServer) LoginUser(context.Context, *UserLoginPayload) (*LoginResponse, error) {
+func (UnimplementedUserServiceServer) LoginUser(context.Context, *UserLoginPayload) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
 }
-func (UnimplementedUserServviceServer) CreateRating(context.Context, *Review) (*ReviewMessage, error) {
+func (UnimplementedUserServiceServer) CreateRating(context.Context, *Review) (*ReviewMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRating not implemented")
 }
-func (UnimplementedUserServviceServer) mustEmbedUnimplementedUserServviceServer() {}
+func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
-// UnsafeUserServviceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to UserServviceServer will
+// UnsafeUserServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to UserServiceServer will
 // result in compilation errors.
-type UnsafeUserServviceServer interface {
-	mustEmbedUnimplementedUserServviceServer()
+type UnsafeUserServiceServer interface {
+	mustEmbedUnimplementedUserServiceServer()
 }
 
-func RegisterUserServviceServer(s grpc.ServiceRegistrar, srv UserServviceServer) {
-	s.RegisterService(&UserServvice_ServiceDesc, srv)
+func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
+	s.RegisterService(&UserService_ServiceDesc, srv)
 }
 
-func _UserServvice_RegisterUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserService_RegisterUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UserRegistrationPayload)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServviceServer).RegisterUser(ctx, in)
+		return srv.(UserServiceServer).RegisterUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.UserServvice/RegisterUser",
+		FullMethod: "/proto.UserService/RegisterUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServviceServer).RegisterUser(ctx, req.(*UserRegistrationPayload))
+		return srv.(UserServiceServer).RegisterUser(ctx, req.(*UserRegistrationPayload))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserServvice_LoginUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserService_LoginUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UserLoginPayload)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServviceServer).LoginUser(ctx, in)
+		return srv.(UserServiceServer).LoginUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.UserServvice/LoginUser",
+		FullMethod: "/proto.UserService/LoginUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServviceServer).LoginUser(ctx, req.(*UserLoginPayload))
+		return srv.(UserServiceServer).LoginUser(ctx, req.(*UserLoginPayload))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserServvice_CreateRating_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserService_CreateRating_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Review)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServviceServer).CreateRating(ctx, in)
+		return srv.(UserServiceServer).CreateRating(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.UserServvice/CreateRating",
+		FullMethod: "/proto.UserService/CreateRating",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServviceServer).CreateRating(ctx, req.(*Review))
+		return srv.(UserServiceServer).CreateRating(ctx, req.(*Review))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// UserServvice_ServiceDesc is the grpc.ServiceDesc for UserServvice service.
+// UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var UserServvice_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.UserServvice",
-	HandlerType: (*UserServviceServer)(nil),
+var UserService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.UserService",
+	HandlerType: (*UserServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "RegisterUser",
-			Handler:    _UserServvice_RegisterUser_Handler,
+			Handler:    _UserService_RegisterUser_Handler,
 		},
 		{
 			MethodName: "LoginUser",
-			Handler:    _UserServvice_LoginUser_Handler,
+			Handler:    _UserService_LoginUser_Handler,
 		},
 		{
 			MethodName: "CreateRating",
-			Handler:    _UserServvice_CreateRating_Handler,
+			Handler:    _UserService_CreateRating_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
