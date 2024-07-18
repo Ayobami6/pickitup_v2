@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"time"
 
 	"github.com/Ayobami6/common/config"
 	"github.com/Ayobami6/common/db"
@@ -14,6 +15,11 @@ import (
 
 // register consul service
 
+
+const (
+    checkID = "alive"
+    ttl = time.Second * 8
+)
 func registerUserService() {
 	conf := api.DefaultConfig()
     client, err := api.NewClient(conf)
@@ -27,18 +33,33 @@ func registerUserService() {
         Address: "localhost",
         Port:    5005,
         Check: &api.AgentServiceCheck{
-            GRPC:                           "localhost:5005",
-            Interval:                       "10s",
-            DeregisterCriticalServiceAfter: "1m",
+            // GRPC:                           "localhost:5005",
+            DeregisterCriticalServiceAfter: "5m",
+            // Interval: ttl.String(),
+            CheckID: checkID,
+            TLSSkipVerify: true,
+            TTL: ttl.String(),
         },
     }
 
     err = client.Agent().ServiceRegister(registration)
+    go updateHealthCheck(client)
     if err != nil {
         log.Fatalf("Failed to register user service: %v", err)
     }
 
 }
+
+func updateHealthCheck(client *api.Client) {
+    ticker := time.NewTicker(time.Second * 5)
+    for {
+       err :=  client.Agent().UpdateTTL(checkID, "active", api.HealthPassing)
+       if err != nil {
+        log.Fatal(err)
+       }
+        <-ticker.C
+    }
+} 
 
 func startUserService() {
 	grpcServer := grpc.NewServer()
