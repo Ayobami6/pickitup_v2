@@ -1,4 +1,4 @@
-package users
+package main
 
 type UserRepo interface {
 	CreateUser(user *User) error
