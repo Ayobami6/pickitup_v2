@@ -33,7 +33,7 @@ func (h *usersGrpcHandler) RegisterUser(ctx context.Context, req *userPb.UserReg
 	phone := req.PhoneNumber
 	// get 
 	_, err := h.repo.GetUserByEmail(email)
-    if err != nil {
+    if err == nil {
         return nil, errors.New("User with this email already exists")
     }
 	// hash password 

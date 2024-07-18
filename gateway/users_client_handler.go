@@ -4,7 +4,10 @@ import (
 	"net/http"
 
 	pbUser "github.com/Ayobami6/common/proto/users"
+	"github.com/Ayobami6/common/utils"
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type UserClientHandler struct {
@@ -23,24 +26,28 @@ func (h *UserClientHandler) RegisterRoutes(router *mux.Router) {
 
 
 func (h *UserClientHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
-	//... implement user registration logic here
-    // Create a new user
-    // Call the UserServiceClient.Register method
-    // Write the response to the client
-    // Handle errors as needed
-    //...
-    // Example:
-    // user := &pbUser.User{
-    //     Email:    r.FormValue("email"),
-    //     Password: r.FormValue("password"),
-    // }
-    //
-    // resp, err := h.client.Register(context.Background(), user)
-    // if err!= nil {
-    //     http.Error(w, err.Error(), http.StatusInternalServerError)
-    //     return
-    // }
-    //
-    // w.Header().Set("Content-Type", "application/json")
-    // json.NewEncoder(w).Encode(resp)
+    var registerPayload *pbUser.UserRegistrationPayload
+
+    err := utils.ParseJSON(r, &registerPayload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, err.Error())
+        return
+    }
+
+    res, err := h.client.RegisterUser(r.Context(), registerPayload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+    
+    rStatus := status.Convert(err)
+	if rStatus != nil {
+		if rStatus.Code() != codes.InvalidArgument {
+			utils.WriteError(w, http.StatusInternalServerError, rStatus.Message())
+            return
+		}
+	}
+    message := res.Message
+
+    utils.WriteJSON(w, http.StatusCreated, "success", nil, message)
 }
