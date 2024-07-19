@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	pbRider "github.com/Ayobami6/common/proto/riders"
@@ -14,8 +15,8 @@ type RiderClientHandler struct {
 	userClient pbUser.UserServiceClient
 }
 
-func NewRiderClientHandler(client pbRider.RiderServiceClient) *RiderClientHandler {
-    return &RiderClientHandler{client: client}
+func NewRiderClientHandler(client pbRider.RiderServiceClient, userClient pbUser.UserServiceClient) *RiderClientHandler {
+    return &RiderClientHandler{client: client, userClient: userClient}
 }
 
 func (h *RiderClientHandler)RegisterRoutes(router *mux.Router) {
@@ -38,6 +39,10 @@ func (h *RiderClientHandler) HandleRiderRegister(w http.ResponseWriter, r *http.
 	password := riderRegisterPayload.Password
 	phone_number := riderRegisterPayload.PhoneNumber
 
+	if h.userClient == nil {
+		log.Fatal("userClient is nil")
+	}
+
 	res, err := h.userClient.RegisterUser(r.Context(), &pbUser.UserRegistrationPayload{
 		Email: email,
 		Username: username,
@@ -45,14 +50,20 @@ func (h *RiderClientHandler) HandleRiderRegister(w http.ResponseWriter, r *http.
         PhoneNumber: phone_number,
 	})
 
+	log.Println("Couldnt get here")
+	log.Println(res)
+
 	// TODO: handle some error types
 	if err!= nil {
         utils.WriteError(w, http.StatusInternalServerError, err.Error())
         return
     }
 
+	
+
 	// create rider
 	userId := res.UserID
+	log.Println("Couldnt get here")
 
 	message, newErr := h.client.CreateRider(r.Context(), &pbRider.CreateRiderPayload{
 		UserId: userId,
@@ -65,6 +76,7 @@ func (h *RiderClientHandler) HandleRiderRegister(w http.ResponseWriter, r *http.
 		DriverLicenseNumber: riderRegisterPayload.DriverLicenseNumber,
 		BikeNumber: riderRegisterPayload.BikeNumber,
 	})
+	log.Println("Couldnt get here")
 
 	if newErr != nil {
 		utils.WriteError(w, http.StatusInternalServerError, newErr.Error())
