@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+option go_package = "github.com/Ayobami6/common/proto";
+
+package proto;
+
+message CreateRiderPayload {
+    string username = 1;
+    string password = 2;
+    string email = 3;
+    string phone_number = 4;
+    string first_name = 5;
+    string last_name = 6;
+    string address = 7;
+    int64 user_id = 8;
+    string next_of_kin_name = 9;
+    string next_of_kin_phone = 10;
+    string driver_license_number = 11;
+    string next_of_kin_address = 12;
+    string bike_number = 13;
+}
+
+message Rider {
+    int64 id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string rider_id = 4;
+    string bike_number = 5;
+    string address = 6;
+    string successful_rides = 7;
+    float rating = 8;
+    string level = 9;
+    string self_url = 10;
+    string availability_status = 11;
+    string current_location = 12;
+    repeated Review reviews = 13;
+    float minimum_charge = 14;
+    float maximum_charge = 15;
+}
+
+message Review {
+    int64 user_id = 1;
+    int32 rating = 2;
+    int64 rider_id = 3;
+    string comment = 4;
+}
+
+message CreateRiderResponse {
+    string message = 1;
+}
+
+message GetRidersResponse {
+    repeated Rider riders = 1;
+}
+
+message RiderUserID {
+    int64 user_id = 1;
+}
+
+message RiderID {
+    int64 rider_id = 1;
+}
+
+message ResponseMessage {
+    string message = 1;
+}
+
+message GetRidersRequest {}
+
+message ChargeUpdatePayload {
+    float maximum_charge = 1;
+    float minimum_charge = 2;
+    int64 user_id = 3;
+}
+
+message UpdateAvailabiltyStatusPayLoad {
+    int64 rider_id = 1;
+    string status = 2;
+}
+
+service RiderService {
+    rpc CreateRider(CreateRiderPayload) returns (CreateRiderResponse){};
+    rpc GetRiders(GetRidersRequest) returns (GetRidersResponse){};
+    rpc GetRiderByUserID(RiderUserID) returns (Rider){};
+    rpc GetRiderByID(RiderID) returns (Rider){};
+    rpc UpdateRating(RiderID) returns (ResponseMessage){};
+    rpc UpdateMinAndMaxCharge(ChargeUpdatePayload) returns (ResponseMessage){};
+    rpc UpdateAvailabilityStatus(UpdateAvailabiltyStatusPayLoad) returns (ResponseMessage){};
+}
