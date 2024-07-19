@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UserServiceClient interface {
 	RegisterUser(ctx context.Context, in *UserRegistrationPayload, opts ...grpc.CallOption) (*RegisterMessage, error)
 	LoginUser(ctx context.Context, in *UserLoginPayload, opts ...grpc.CallOption) (*LoginResponse, error)
-	CreateRating(ctx context.Context, in *Review, opts ...grpc.CallOption) (*ReviewMessage, error)
+	CreateRating(ctx context.Context, in *ReviewRequest, opts ...grpc.CallOption) (*ReviewMessage, error)
 	GetUserByID(ctx context.Context, in *UserIDMessage, opts ...grpc.CallOption) (*User, error)
 }
 
@@ -54,7 +54,7 @@ func (c *userServiceClient) LoginUser(ctx context.Context, in *UserLoginPayload,
 	return out, nil
 }
 
-func (c *userServiceClient) CreateRating(ctx context.Context, in *Review, opts ...grpc.CallOption) (*ReviewMessage, error) {
+func (c *userServiceClient) CreateRating(ctx context.Context, in *ReviewRequest, opts ...grpc.CallOption) (*ReviewMessage, error) {
 	out := new(ReviewMessage)
 	err := c.cc.Invoke(ctx, "/proto.UserService/CreateRating", in, out, opts...)
 	if err != nil {
@@ -78,7 +78,7 @@ func (c *userServiceClient) GetUserByID(ctx context.Context, in *UserIDMessage, 
 type UserServiceServer interface {
 	RegisterUser(context.Context, *UserRegistrationPayload) (*RegisterMessage, error)
 	LoginUser(context.Context, *UserLoginPayload) (*LoginResponse, error)
-	CreateRating(context.Context, *Review) (*ReviewMessage, error)
+	CreateRating(context.Context, *ReviewRequest) (*ReviewMessage, error)
 	GetUserByID(context.Context, *UserIDMessage) (*User, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -93,7 +93,7 @@ func (UnimplementedUserServiceServer) RegisterUser(context.Context, *UserRegistr
 func (UnimplementedUserServiceServer) LoginUser(context.Context, *UserLoginPayload) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
 }
-func (UnimplementedUserServiceServer) CreateRating(context.Context, *Review) (*ReviewMessage, error) {
+func (UnimplementedUserServiceServer) CreateRating(context.Context, *ReviewRequest) (*ReviewMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRating not implemented")
 }
 func (UnimplementedUserServiceServer) GetUserByID(context.Context, *UserIDMessage) (*User, error) {
@@ -149,7 +149,7 @@ func _UserService_LoginUser_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _UserService_CreateRating_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Review)
+	in := new(ReviewRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func _UserService_CreateRating_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/proto.UserService/CreateRating",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).CreateRating(ctx, req.(*Review))
+		return srv.(UserServiceServer).CreateRating(ctx, req.(*ReviewRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

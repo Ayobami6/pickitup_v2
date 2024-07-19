@@ -42,13 +42,14 @@ func (h *usersGrpcHandler) RegisterUser(ctx context.Context, req *userPb.UserReg
 	if err!= nil {
         return nil, errors.New("something went wrong")
     }
-
-	if err := h.repo.CreateUser(&User{
+	user := &User{
 		Email:    email,
         Password: password,
         UserName: username,
         PhoneNumber: phone,
-	}); err != nil {
+	}
+
+	if err := h.repo.CreateUser(user); err != nil {
 		err := err.Error()
 		if strings.Contains(err, "uni_users_phone_number") {
 			return nil, errors.New("user with this phone number already exists")
@@ -68,6 +69,7 @@ func (h *usersGrpcHandler) RegisterUser(ctx context.Context, req *userPb.UserReg
 	}
 	message := &userPb.RegisterMessage{
 		Message: "User successfully created!",
+		UserID: int64(user.ID),
 	}
 
 	return message, nil

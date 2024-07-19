@@ -66,13 +66,13 @@ func (r *RiderRepoImpl)GetRiderByUserID(userID uint) (*Rider,error){
 }
 
 
-func (r *RiderRepoImpl) GetRiderByID(id uint)(Rider, error) {
+func (r *RiderRepoImpl) GetRiderByID(id uint)(*Rider, error) {
 	var rider Rider
     res := r.db.First(&rider, id)
     if res.Error!= nil {
-        return Rider{}, res.Error
+        return &Rider{}, res.Error
     }
-    return rider, nil
+    return &rider, nil
 }
 
 
