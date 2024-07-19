@@ -22,7 +22,7 @@ func NewUserClientHandler(client pbUser.UserServiceClient) *UserClientHandler {
 func (h *UserClientHandler) RegisterRoutes(router *mux.Router) {
 	// Register your routes here
     router.HandleFunc("/register", h.HandleRegister).Methods("POST")
-    router.HandleFunc("/login", h.HandleRegister).Methods("POST")
+    router.HandleFunc("/login", h.HandleLoginUser).Methods("POST")
 }
 
 

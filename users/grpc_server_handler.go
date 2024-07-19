@@ -81,7 +81,7 @@ func (h *usersGrpcHandler) LoginUser(ctx context.Context, in *userPb.UserLoginPa
     if err!= nil {
         return nil, errors.New("user not found")
     }
-    if!auth.CheckPassword(password,[]byte(user.Password)) {
+    if!auth.CheckPassword(user.Password, []byte(password)) {
         return nil, errors.New("incorrect password")
     }
 	secret := []byte(config.GetEnv("JWT_SECRET", "secret"))
