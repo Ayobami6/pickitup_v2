@@ -9,8 +9,15 @@ message User {
     string email = 2;
     string phone_number = 3;
     string created_at = 4;
+    float wallet_balance = 5;
+    string account_name = 6;
+    string account_number = 7;
+    string bank_name = 8;
+    bool verified = 9;
+    int64 id = 10;
+    int64 rider_id = 11;
+    string updated_at = 12;
 }
-
 
 message UserRegistrationPayload {
     string username = 1;
@@ -43,8 +50,13 @@ message ReviewMessage {
     string message = 1;
 }
 
+message UserIDMessage {
+    int64 user_id = 1;
+}
+
 service UserService {
     rpc RegisterUser (UserRegistrationPayload) returns (RegisterMessage) {};
     rpc LoginUser (UserLoginPayload) returns (LoginResponse) {};
     rpc CreateRating (Review) returns (ReviewMessage){};
+    rpc GetUserByID (UserIDMessage) returns(User){};
 }

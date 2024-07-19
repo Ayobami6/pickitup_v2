@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/Ayobami6/common/auth"
+	"github.com/Ayobami6/common/config"
 	userPb "github.com/Ayobami6/common/proto/users"
 	"github.com/Ayobami6/common/utils"
 	"google.golang.org/grpc"
@@ -24,7 +26,6 @@ func NewUsersGrpcHandler(grpcServer *grpc.Server, repo UserRepo) {
 }
 
 
-
 func (h *usersGrpcHandler) RegisterUser(ctx context.Context, req *userPb.UserRegistrationPayload) (*userPb.RegisterMessage, error) {
 	// user registration logic
 	email := req.Email
@@ -34,12 +35,12 @@ func (h *usersGrpcHandler) RegisterUser(ctx context.Context, req *userPb.UserReg
 	// get 
 	_, err := h.repo.GetUserByEmail(email)
     if err == nil {
-        return nil, errors.New("User with this email already exists")
+        return nil, errors.New("user with this email already exists")
     }
 	// hash password 
 	password, err = auth.HashPassword(password)
 	if err!= nil {
-        return nil, errors.New("Something went wrong")
+        return nil, errors.New("something went wrong")
     }
 
 	if err := h.repo.CreateUser(&User{
@@ -50,9 +51,9 @@ func (h *usersGrpcHandler) RegisterUser(ctx context.Context, req *userPb.UserReg
 	}); err != nil {
 		err := err.Error()
 		if strings.Contains(err, "uni_users_phone_number") {
-			return nil, errors.New("User with this phone number already exists")
+			return nil, errors.New("user with this phone number already exists")
 		}
-		return nil, errors.New("Something went wrong")
+		return nil, errors.New("something went wrong")
 	}
 	num, err := utils.GenerateAndCacheVerificationCode(email)
 	if err!= nil {
@@ -72,3 +73,47 @@ func (h *usersGrpcHandler) RegisterUser(ctx context.Context, req *userPb.UserReg
 	return message, nil
 
 }
+
+func (h *usersGrpcHandler) LoginUser(ctx context.Context, in *userPb.UserLoginPayload) (*userPb.LoginResponse, error) {
+	email := in.Email
+    password := in.Password
+    user, err := h.repo.GetUserByEmail(email)
+    if err!= nil {
+        return nil, errors.New("user not found")
+    }
+    if!auth.CheckPassword(password,[]byte(user.Password)) {
+        return nil, errors.New("incorrect password")
+    }
+	secret := []byte(config.GetEnv("JWT_SECRET", "secret"))
+    token, err := auth.CreateJWT(secret, int(user.ID))
+    if err!= nil {
+        return nil, errors.New("failed to generate token")
+    }
+    message := &userPb.LoginResponse{
+        AccessToken: token,
+    }
+    return message, nil
+}
+
+func (h *usersGrpcHandler)GetUserByID(ctx context.Context, in *userPb.UserIDMessage) (*userPb.User, error) {
+	id := in.UserId
+    user, err := h.repo.GetUserByID(uint(id))
+    if err!= nil {
+        return &userPb.User{}, errors.New("user not found")
+    }
+    return &userPb.User{
+        Id:          int64(user.ID),
+        Email:        user.Email,
+        Username:     user.UserName,
+        PhoneNumber: user.PhoneNumber,
+		WalletBalance: float32(user.WalletBalance),
+		RiderId: int64(user.RiderID),
+		Verified: user.Verified,
+		AccountName: user.AccountName,
+		BankName: user.BankName,
+		AccountNumber: user.AccountNumber,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+        UpdatedAt: user.UpdatedAt.Format(time.RFC3339),	
+    }, nil
+}
+
