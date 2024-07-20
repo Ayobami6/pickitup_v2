@@ -16,6 +16,7 @@ type User struct {
 	AccountName   string    `json:"account_name"`
 	BankName      string    `json:"bank_name"`
 	Password      string    `json:"password"`
+	RiderID  	uint `json:"rider_id"`
 	Verified      bool      `json:"verified" gorm:"default:false"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
