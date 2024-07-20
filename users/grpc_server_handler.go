@@ -13,15 +13,17 @@ import (
 	userPb "github.com/Ayobami6/common/proto/users"
 	"github.com/Ayobami6/common/utils"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
 type usersGrpcHandler struct {
 	userPb.UnimplementedUserServiceServer
 	repo UserRepo
+	db *gorm.DB
 }
 
-func NewUsersGrpcHandler(grpcServer *grpc.Server, repo UserRepo) {
-	handler := &usersGrpcHandler{repo: repo}
+func NewUsersGrpcHandler(grpcServer *grpc.Server, repo UserRepo, db *gorm.DB) {
+	handler := &usersGrpcHandler{repo: repo, db: db}
     userPb.RegisterUserServiceServer(grpcServer, handler)
 }
 
@@ -117,5 +119,23 @@ func (h *usersGrpcHandler)GetUserByID(ctx context.Context, in *userPb.UserIDMess
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
         UpdatedAt: user.UpdatedAt.Format(time.RFC3339),	
     }, nil
+}
+
+func (h *usersGrpcHandler)ChargeUserWallet(ctx context.Context, in *userPb.ChargeRequest) (*userPb.ChargeResponse, error){
+	userId := in.UserId
+	charge := in.Charge
+	// get the user 
+	user, err := h.repo.GetUserByID(uint(userId))
+    if err!= nil {
+        return nil, errors.New("user not found")
+    }
+	err = user.Debit(h.db, float64(charge))
+	if err!= nil {
+        return nil, errors.New("failed to debit user wallet")
+    }
+	message := &userPb.ChargeResponse{}
+
+	return message, nil
+    
 }
 

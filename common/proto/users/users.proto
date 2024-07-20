@@ -55,9 +55,17 @@ message UserIDMessage {
     int64 user_id = 1;
 }
 
+message ChargeRequest {
+    float charge = 1;
+    int64 user_id = 2;
+}
+
+message ChargeResponse {}
+
 service UserService {
     rpc RegisterUser (UserRegistrationPayload) returns (RegisterMessage) {};
     rpc LoginUser (UserLoginPayload) returns (LoginResponse) {};
     rpc CreateRating (ReviewRequest) returns (ReviewMessage){};
     rpc GetUserByID (UserIDMessage) returns(User){};
+    rpc ChargeUserWallet (ChargeRequest) returns (ChargeResponse) {};
 }

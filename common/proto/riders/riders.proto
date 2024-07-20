@@ -36,6 +36,7 @@ message Rider {
     repeated Review reviews = 13;
     float minimum_charge = 14;
     float maximum_charge = 15;
+    int64 user_id = 16;
 }
 
 message Review {

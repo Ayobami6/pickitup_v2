@@ -76,6 +76,7 @@ func (h *riderGrpcHandler)GetRiderByID(ctx context.Context, in *riderPb.RiderID)
 		Reviews: parsedReviews,
 		MaximumCharge: float32(rider.MaximumCharge),
 		MinimumCharge: float32(rider.MinimumCharge),
+		UserId: int64(rider.UserID),
 
     }, nil
 }

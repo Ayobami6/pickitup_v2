@@ -28,6 +28,7 @@ message OrderResponse {
     bool acknowledge = 10;
     string pickup_address = 11;
     string payment_status = 12;
+    string drop_off_address = 13;
 }
 
 message GetOrderRequest {
