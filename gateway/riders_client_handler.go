@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	pbRider "github.com/Ayobami6/common/proto/riders"
 	pbUser "github.com/Ayobami6/common/proto/users"
@@ -21,6 +23,7 @@ func NewRiderClientHandler(client pbRider.RiderServiceClient, userClient pbUser.
 
 func (h *RiderClientHandler)RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/register/rider", h.HandleRiderRegister).Methods("POST")
+	router.HandleFunc("/riders/{id}", h.HandleGetRider).Methods("GET")
 }
 
 // handler rider register
@@ -79,4 +82,32 @@ func (h *RiderClientHandler) HandleRiderRegister(w http.ResponseWriter, r *http.
 
 	utils.WriteJSON(w, http.StatusCreated, "success", nil, message.Message)
 
+}
+
+func (h *RiderClientHandler) HandleGetRider(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	ID, err := strconv.Atoi(id)
+	if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid ID")
+        return
+    }
+	rider, err := h.client.GetRiderByID(r.Context(), &pbRider.RiderID{RiderId: int64(ID)})
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Something went wrong")
+    }
+	domain := getDomainURL(r)
+	var selfUrl = fmt.Sprintf("%s/api/v2/riders/%s", domain, rider.RiderId)
+	rider.SelfUrl = selfUrl
+
+    utils.WriteJSON(w, http.StatusOK, "success", rider, "Fetch Successful")
+}
+
+
+func getDomainURL(r *http.Request) string {
+    scheme := "http"
+    if r.TLS != nil {
+        scheme = "https"
+    }
+    return scheme + "://" + r.Host
 }

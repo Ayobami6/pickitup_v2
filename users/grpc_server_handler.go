@@ -100,7 +100,6 @@ func (h *usersGrpcHandler) LoginUser(ctx context.Context, in *userPb.UserLoginPa
 func (h *usersGrpcHandler)GetUserByID(ctx context.Context, in *userPb.UserIDMessage) (*userPb.User, error) {
 	id := in.UserId
     user, err := h.repo.GetUserByID(uint(id))
-	log.Println("this is the get user by id err", err)
     if err!= nil {
         return &userPb.User{}, errors.New("user not found")
     }

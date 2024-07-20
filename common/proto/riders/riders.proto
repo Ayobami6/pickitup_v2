@@ -40,7 +40,7 @@ message Rider {
 
 message Review {
     int64 user_id = 1;
-    int32 rating = 2;
+    float rating = 2;
     int64 rider_id = 3;
     string comment = 4;
 }
