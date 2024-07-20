@@ -174,6 +174,7 @@ func Auth(handlerFunc http.HandlerFunc, userClient pbUser.UserServiceClient ) ht
 	// return the http.Handler function
 	return func(w http.ResponseWriter, r *http.Request) {
         tokenString, err := utils.GetTokenFromRequest(r)
+		log.Println(tokenString)
 		if err!= nil {
             http.Error(w, "Missing or invalid token", http.StatusUnauthorized)
             return
@@ -182,33 +183,41 @@ func Auth(handlerFunc http.HandlerFunc, userClient pbUser.UserServiceClient ) ht
             if _, ok := token.Method.(*jwt.SigningMethodHMAC);!ok {
                 return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
             }
-            return []byte(config.GetEnv("JWT_SECRET", "")), nil
+            return []byte(config.GetEnv("JWT_SECRET", "secret")), nil
         })
+		log.Println(err)
+		log.Println(token)
         if err!= nil ||!token.Valid {
+			log.Println("This is sign token error",err)
             Forbidden(w)
             return
         }
         // get claims from jwt
 		claims, ok := token.Claims.(*jwt.MapClaims)
 		if !ok {
+			log.Println("This token claims error", ok)
 			Forbidden(w)
 			return
 		}
 		userIDStr, ok := (*claims)["UserID"].(string)
 		if!ok {
+			log.Println("This token Ok",)
             Forbidden(w)
             return
         }
 		userID, err := strconv.Atoi(userIDStr)
 		if err!= nil {
+			log.Println("This is string convert")
             Forbidden(w)
             return
         }
 		log.Println(userID)
-		var userIdPayload *pbUser.UserIDMessage
 		// verify user from the database
-		_, err = userClient.GetUserByID(r.Context(), userIdPayload)
+		_, err = userClient.GetUserByID(r.Context(), &pbUser.UserIDMessage{
+			UserId: int64(userID),
+		})
         if err!= nil {
+			log.Println("This is user get error", err)
             Forbidden(w)
             return
         }

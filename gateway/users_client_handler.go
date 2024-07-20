@@ -1,8 +1,10 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
+	"github.com/Ayobami6/common/auth"
 	pbUser "github.com/Ayobami6/common/proto/users"
 	"github.com/Ayobami6/common/utils"
 	"github.com/gorilla/mux"
@@ -23,6 +25,7 @@ func (h *UserClientHandler) RegisterRoutes(router *mux.Router) {
 	// Register your routes here
     router.HandleFunc("/register", h.HandleRegister).Methods("POST")
     router.HandleFunc("/login", h.HandleLoginUser).Methods("POST")
+    router.HandleFunc("/users/details", auth.Auth(h.HandleGetUserDetails, h.client)).Methods("GET")
 }
 
 
@@ -76,4 +79,21 @@ func (h *UserClientHandler) HandleLoginUser(w http.ResponseWriter, r *http.Reque
 	}
 
     utils.WriteJSON(w, http.StatusOK, "success", res, "Login Successful" )
+}
+
+func (h *UserClientHandler) HandleGetUserDetails(w http.ResponseWriter, r *http.Request){
+    userID := auth.GetUserIDFromContext(r.Context())
+    log.Println(userID)
+    if userID == -1 {
+        auth.Forbidden(w)
+        return
+    }
+    res, err := h.client.GetUserByID(r.Context(), &pbUser.UserIDMessage{
+        UserId: int64(userID),
+    })
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to get user details")
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", res, "User Details Retrieved Successfully")
 }
