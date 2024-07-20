@@ -18,3 +18,8 @@ gen-riders:
 	@protoc --go_out=. --go_opt=paths=source_relative \
     --go-grpc_out=. --go-grpc_opt=paths=source_relative \
     common/proto/riders/riders.proto
+
+gen-orders:
+	@protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    common/proto/orders/orders.proto

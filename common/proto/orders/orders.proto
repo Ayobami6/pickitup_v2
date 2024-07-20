@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+option go_package = "github.com/Ayobami6/common/proto";
+
+package proto;
+
+
+message CreateOrderRequest {
+    string item = 1;
+    int64 quantity = 2;
+    string pickup_address = 3;
+    string drop_off_address = 4;
+    int64 rider_id = 5;
+    int64 user_id = 6;
+    double charge = 7;
+}
+
+message OrderResponse {
+    int64 id = 1;
+    int64 user_id = 2;
+    double charge = 3;
+    string status = 4;
+    string created_at = 5;
+    int64 rider_id = 6;
+    string ref_id = 7;
+    string item = 8;
+    int64 quantity = 9;
+    bool acknowledge = 10;
+    string pickup_address = 11;
+    string payment_status = 12;
+}
+
+message GetOrderRequest {
+    int64 id = 1;
+}
+
+message AllOderRequest {
+    int64 user_id = 1;
+}
+
+message UpdateDeliveryStatusRequest {
+    int64 id = 1;
+    string status = 2;
+}
+
+message UpdateAcknowledgementRequest {
+    int64 id = 1;
+}
+
+message UpdateResponse {
+    string message = 1;
+}
+
+message AllOrderReponse {
+    repeated OrderResponse orders = 1;
+}
+
+
+service OrderService {
+    rpc CreateOrder (CreateOrderRequest) returns (OrderResponse) {}
+    rpc GetOrder (GetOrderRequest) returns (OrderResponse) {}
+    rpc GetOrders (AllOderRequest) returns (AllOrderReponse) {}
+    rpc UpdateDeliveryStatus (UpdateDeliveryStatusRequest) returns (UpdateResponse) {}
+    rpc UpdateAcknowledgement (UpdateAcknowledgementRequest) returns (UpdateResponse) {}
+}
