@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Ayobami6/common/auth"
 	pb "github.com/Ayobami6/common/proto/orders"
@@ -12,6 +15,7 @@ import (
 	pbUser "github.com/Ayobami6/common/proto/users"
 	"github.com/Ayobami6/common/utils"
 	"github.com/gorilla/mux"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 
@@ -19,10 +23,11 @@ type OrderClientHandler struct {
 	client pb.OrderServiceClient
 	userClient pbUser.UserServiceClient
 	riderClient pbRider.RiderServiceClient
+	conn *amqp.Connection
 }
 
-func NewOrderClientHandler(client pb.OrderServiceClient, userClient pbUser.UserServiceClient, riderClient pbRider.RiderServiceClient) *OrderClientHandler {
-    return &OrderClientHandler{client: client, userClient: userClient, riderClient: riderClient}
+func NewOrderClientHandler(client pb.OrderServiceClient, userClient pbUser.UserServiceClient, riderClient pbRider.RiderServiceClient, conn *amqp.Connection) *OrderClientHandler {
+    return &OrderClientHandler{client: client, userClient: userClient, riderClient: riderClient, conn: conn}
 }
 
 func (h *OrderClientHandler)RegisterRoutes(router *mux.Router) {
@@ -136,6 +141,43 @@ func (h *OrderClientHandler) HandleCreateOrder(w http.ResponseWriter, r *http.Re
 		"riderEmail": riderUser.Email,
 		"userUsername": user.Username,
 	}
+	// start rabbit channel
+	ch, cErr := h.conn.Channel()
+	if cErr!= nil {
+        log.Println("Failed to open a channel", cErr)
+    }
+	defer ch.Close()
+	// declare queue
+	q, err := ch.QueueDeclare(
+		"order_notification",
+		false,   
+		false,  
+		false,
+		false,
+		nil, 
+	  )
+
+	if err != nil {
+		log.Println("Failed to declare a queue", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	body, err := json.Marshal(mailData)
+    if err != nil {
+        log.Println("Failed to marshal data", err)
+    }
+	err = ch.PublishWithContext(ctx,
+		"",     
+		q.Name,
+		false,
+		false,
+		amqp.Publishing {
+		  ContentType: "application/json",
+		  Body:        body,
+		})
+	if err!= nil {
+        log.Println("Failed to publish a message", err)
+    }
 
 	// send mail with notification service using message broker
 
