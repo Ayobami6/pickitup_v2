@@ -44,7 +44,7 @@ func StartGateway() {
 	defer rConn.Close()
 	log.Println("Dailing rider service at ", RiderServiceAddr)
 	rC := pbRider.NewRiderServiceClient(rConn)
-	uC := pbUser.NewUserServiceClient(rConn)
+	uC := pbUser.NewUserServiceClient(uconn)
 	riderHandler := NewRiderClientHandler(rC, uC)
 	riderHandler.RegisterRoutes(subrouter)
 	log.Printf("Server is listening on %s", httpAddr)

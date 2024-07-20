@@ -38,35 +38,25 @@ func (h *RiderClientHandler) HandleRiderRegister(w http.ResponseWriter, r *http.
 	username := riderRegisterPayload.Username
 	password := riderRegisterPayload.Password
 	phone_number := riderRegisterPayload.PhoneNumber
-
-	if h.userClient == nil {
-		log.Fatal("userClient is nil")
-	}
-
+	// create user 
 	res, err := h.userClient.RegisterUser(r.Context(), &pbUser.UserRegistrationPayload{
-		Email: email,
-		Username: username,
-        Password:  password,
+        Email:    email,
+        Password: password,
+        Username: username,
         PhoneNumber: phone_number,
-	})
-
-	log.Println("Couldnt get here")
-	log.Println(res)
-
-	// TODO: handle some error types
-	if err!= nil {
+    })
+    if err!= nil {
         utils.WriteError(w, http.StatusInternalServerError, err.Error())
         return
     }
 
-	
+	// TODO: handle some error types
 
 	// create rider
-	userId := res.UserID
-	log.Println("Couldnt get here")
+	userID := res.UserID
 
 	message, newErr := h.client.CreateRider(r.Context(), &pbRider.CreateRiderPayload{
-		UserId: userId,
+		UserId: int64(userID),
 		FirstName: riderRegisterPayload.FirstName,
 		LastName: riderRegisterPayload.LastName,
 		Address: riderRegisterPayload.Address,
@@ -75,6 +65,10 @@ func (h *RiderClientHandler) HandleRiderRegister(w http.ResponseWriter, r *http.
 		NextOfKinAddress: riderRegisterPayload.NextOfKinAddress,
 		DriverLicenseNumber: riderRegisterPayload.DriverLicenseNumber,
 		BikeNumber: riderRegisterPayload.BikeNumber,
+		Email: email,
+		Password: password,
+		PhoneNumber: phone_number,
+		Username: username,
 	})
 	log.Println("Couldnt get here")
 
