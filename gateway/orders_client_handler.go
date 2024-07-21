@@ -23,11 +23,11 @@ type OrderClientHandler struct {
 	client pb.OrderServiceClient
 	userClient pbUser.UserServiceClient
 	riderClient pbRider.RiderServiceClient
-	conn *amqp.Connection
+	ch *amqp.Channel
 }
 
-func NewOrderClientHandler(client pb.OrderServiceClient, userClient pbUser.UserServiceClient, riderClient pbRider.RiderServiceClient, conn *amqp.Connection) *OrderClientHandler {
-    return &OrderClientHandler{client: client, userClient: userClient, riderClient: riderClient, conn: conn}
+func NewOrderClientHandler(client pb.OrderServiceClient, userClient pbUser.UserServiceClient, riderClient pbRider.RiderServiceClient, ch *amqp.Channel) *OrderClientHandler {
+    return &OrderClientHandler{client: client, userClient: userClient, riderClient: riderClient, ch: ch}
 }
 
 func (h *OrderClientHandler)RegisterRoutes(router *mux.Router) {
@@ -142,11 +142,7 @@ func (h *OrderClientHandler) HandleCreateOrder(w http.ResponseWriter, r *http.Re
 		"userUsername": user.Username,
 	}
 	// start rabbit channel
-	ch, cErr := h.conn.Channel()
-	if cErr!= nil {
-        log.Println("Failed to open a channel", cErr)
-    }
-	defer ch.Close()
+	ch := h.ch
 	// declare queue
 	q, err := ch.QueueDeclare(
 		"order_notification",

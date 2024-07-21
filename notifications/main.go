@@ -14,7 +14,7 @@ type EmailData struct {
     Subject      string `json:"subject"`
     UserUsername string `json:"userUsername"`
     UserMessage  string `json:"userMessage"`
-	RiderMessage string `json:riderMessage`
+	RiderMessage string `json:"riderMessage"`
 	OrderID  string `json:"orderID"`
 	RiderName string `json:"riderName"`
 	RiderEmail string `json:"riderEmail"`
@@ -22,15 +22,10 @@ type EmailData struct {
 
 
 func main() {
-	rabbitConn := broker.ConnectRabbit()
-	defer rabbitConn.Close()
-
-	ch, err := rabbitConn.Channel()
-	if err!= nil {
-        log.Fatalf("Failed to open a channel: %v", err)
-    }
-	defer ch.Close()
+	ch, coon := broker.ConnectRabbit()
 	// Consume messages from the "order_notification" queue
+	defer coon.Close()
+	defer ch.Close()
 	q, err := ch.QueueDeclare(
 		"order_notification",
 		false,
@@ -68,6 +63,7 @@ func main() {
 			go utils.SendMail(data.RiderEmail, data.Subject, data.RiderName, data.RiderMessage)
         }
     }()
-	<-forever // hang until manually closed
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	<-forever // hang until manually closed
+	
 }

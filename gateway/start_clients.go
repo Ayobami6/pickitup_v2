@@ -4,7 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Ayobami6/common/broker"
 	"github.com/Ayobami6/common/config"
+	pbOrder "github.com/Ayobami6/common/proto/orders"
 	pbRider "github.com/Ayobami6/common/proto/riders"
 	pbUser "github.com/Ayobami6/common/proto/users"
 	"github.com/Ayobami6/common/utils"
@@ -16,6 +18,9 @@ import (
 var httpAddr = config.GetEnv("GATEWAY_PORT", ":2330")
 
 func StartGateway() {
+	ch, coon := broker.ConnectRabbit() 
+	defer coon.Close()
+	defer ch.Close()
 	router := mux.NewRouter()
 	subrouter := router.PathPrefix("/api/v2").Subrouter()
 	userServiceAddr, err := utils.GetServiceAddress("user-service")
@@ -47,6 +52,23 @@ func StartGateway() {
 	uC := pbUser.NewUserServiceClient(uconn)
 	riderHandler := NewRiderClientHandler(rC, uC)
 	riderHandler.RegisterRoutes(subrouter)
+
+	// Order Service
+	orderServiceAddr, err := utils.GetServiceAddress("order-service")
+	if err!= nil {
+        log.Fatalf("Error getting service address: %v", err)
+    }
+	oConn, err := grpc.Dial(orderServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Println("Fail to transport OrderService")
+	}
+	defer oConn.Close()
+	log.Println("Dailing OrderService at ", orderServiceAddr)
+	oC := pbOrder.NewOrderServiceClient(oConn)
+	rNC := pbRider.NewRiderServiceClient(rConn)
+	uNC := pbUser.NewUserServiceClient(uconn)
+	orderHandler := NewOrderClientHandler(oC, uNC, rNC, ch)
+	orderHandler.RegisterRoutes(subrouter)
 	log.Printf("Server is listening on %s", httpAddr)
 
 	if err := http.ListenAndServe(httpAddr, subrouter); err != nil {

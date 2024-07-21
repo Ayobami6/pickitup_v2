@@ -1,4 +1,4 @@
-.PHONY: gen-users start-users
+.PHONY: gen-users start-users gen-riders start-riders start-gateway gen-orders 
 
 start-users:
 	@cd users && air
@@ -13,6 +13,9 @@ start-gateway:
 
 start-riders:
 	@cd riders && air
+
+start-orders:
+	@cd orders && air
 
 gen-riders:
 	@protoc --go_out=. --go_opt=paths=source_relative \
