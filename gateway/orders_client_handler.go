@@ -40,6 +40,7 @@ func (h *OrderClientHandler) HandleCreateOrder(w http.ResponseWriter, r *http.Re
         utils.WriteError(w, http.StatusBadRequest, "Bad Data!")
         return
     }
+	log.Println(createOrderPayload.PickupAddress, createOrderPayload.DropOffAddress)
 
 	params := mux.Vars(r)
     riderID, err := strconv.Atoi(params["rider_id"])
@@ -128,6 +129,7 @@ func (h *OrderClientHandler) HandleCreateOrder(w http.ResponseWriter, r *http.Re
 	respData := map[string]string{
 		"ref_id": res.RefId,
 	}
+	log.Println(res)
 	riderMessage := fmt.Sprintf("You have New Pick Up Order with ID %s\n Containing item %s which is to be picked up at %s \n and delivered at %s Please go to your dashboard to accept the order and transit immediately or reject \n", res.RefId, res.Item, res.PickupAddress, res.DropOffAddress)
 	userMessage := fmt.Sprintf("Your Order %s has been placed successfully \n Here is your rider phone number %s\n\n", res.RefId, riderUser.PhoneNumber)
 	subject := "PickItUp Order Notification"

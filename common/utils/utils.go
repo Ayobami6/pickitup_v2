@@ -17,6 +17,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis/v8"
 	"github.com/hashicorp/consul/api"
+	_ "github.com/joho/godotenv/autoload"
 	"gopkg.in/gomail.v2"
 )
 
@@ -104,7 +105,7 @@ func ParseJSON(r *http.Request, payload any) error {
 }
 
 func SendMail(recipient string, subject string, username string, message string) error {
-	tmpl, err := os.ReadFile("common/utils/verification_template.html")
+	tmpl, err := os.ReadFile("templates/verification_template.html")
 	if err != nil {
 		fmt.Println("Error reading template file:", err)
 		return err

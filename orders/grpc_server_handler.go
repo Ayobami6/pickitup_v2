@@ -26,6 +26,8 @@ func (h *orderGrpcHandler) CreateOrder(ctx context.Context, in *pb.CreateOrderRe
 		Quantity: int(in.Quantity),
 		Charge: in.Charge,
 		Item: in.Item,
+		PickUpAddress: in.PickupAddress,
+		DropOffAddress: in.DropOffAddress,
 	}
 	err := h.repo.CreateOrder(&order)
 	if err!= nil {
@@ -42,6 +44,8 @@ func (h *orderGrpcHandler) CreateOrder(ctx context.Context, in *pb.CreateOrderRe
 		RiderId: int64(order.RiderID),
 		UserId: int64(order.UserID),
 		PaymentStatus: string(order.PaymentStatus),
+		PickupAddress: order.PickUpAddress,
+		DropOffAddress: order.DropOffAddress,
 
 	}
 	return response, nil
