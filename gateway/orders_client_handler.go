@@ -32,6 +32,8 @@ func NewOrderClientHandler(client pb.OrderServiceClient, userClient pbUser.UserS
 
 func (h *OrderClientHandler)RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/orders/{rider_id}", auth.Auth(h.HandleCreateOrder, h.userClient)).Methods("POST")
+	router.HandleFunc("/orders", auth.Auth(h.HandleGetOrders, h.userClient)).Methods("GET")
+	router.HandleFunc("/orders/{id}", auth.Auth(h.HandleGetOrder, h.userClient)).Methods("GET")
 }
 
 func (h *OrderClientHandler) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -181,6 +183,44 @@ func (h *OrderClientHandler) HandleCreateOrder(w http.ResponseWriter, r *http.Re
 
 	utils.WriteJSON(w, http.StatusCreated, "success", respData, "Order Created")
 
-
-
 }
+
+func (h *OrderClientHandler)HandleGetOrders(w http.ResponseWriter, r *http.Request) {
+	// get user from request
+	ctx := r.Context()
+    userID := auth.GetUserIDFromContext(ctx)
+    if userID == -1 {
+        auth.Forbidden(w)
+        return
+    }
+	// get orders
+	orders, err := h.client.GetOrders(ctx, &pb.AllOderRequest{
+		UserId: int64(userID),
+	})
+	if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to get orders")
+        return
+    }
+	utils.WriteJSON(w, http.StatusOK, "success", orders, "Orders retrieved successfully")
+}
+
+func (h *OrderClientHandler)HandleGetOrder(w http.ResponseWriter, r *http.Request) {
+	// get order id for param
+	params := mux.Vars(r)
+	ctx := r.Context()
+    orderId, err := strconv.Atoi(params["id"])
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid order id")
+        return
+    }
+    // get order
+    order, err := h.client.GetOrder(ctx, &pb.GetOrderRequest{
+        Id: int64(orderId),
+    })
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to get order")
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", order, "Order retrieved successfully")
+}
+

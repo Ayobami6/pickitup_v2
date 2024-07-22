@@ -53,3 +53,52 @@ func (h *orderGrpcHandler) CreateOrder(ctx context.Context, in *pb.CreateOrderRe
 }
 
 // get user orders
+func (h * orderGrpcHandler)GetOrders(ctx context.Context, payload *pb.AllOderRequest) (*pb.AllOrderReponse, error) {
+	orders, err  := h.repo.GetOrders(uint(payload.UserId))
+	if err!= nil {
+        log.Println("Error getting orders: ", err)
+        return nil, err
+    }
+	var parsedOrders []*pb.OrderResponse
+	for _, order := range orders {
+		parsedOrders = append(parsedOrders, &pb.OrderResponse{
+            RefId: order.RefID,
+            Status: string(order.Status),
+            CreatedAt: order.CreatedAt.String(),
+            Charge: order.Charge,
+            Item: order.Item,
+            Acknowledge: order.Acknowledge,
+            RiderId: int64(order.RiderID),
+            UserId: int64(order.UserID),
+            PaymentStatus: string(order.PaymentStatus),
+            PickupAddress: order.PickUpAddress,
+            DropOffAddress: order.DropOffAddress,
+			Id: int64(order.ID),
+        })
+	}
+	return &pb.AllOrderReponse{Orders: parsedOrders}, nil
+
+}
+
+// get order 
+func (h *orderGrpcHandler)GetOrder(ctx context.Context, payload *pb.GetOrderRequest) (*pb.OrderResponse, error) {
+	order, err := h.repo.GetOrderByID(uint(payload.Id))
+    if err!= nil {
+        log.Println("Error getting order: ", err)
+        return nil, err
+    }
+    return &pb.OrderResponse{
+        RefId: order.RefID,
+        Status: string(order.Status),
+        CreatedAt: order.CreatedAt.String(),
+        Charge: order.Charge,
+        Item: order.Item,
+        Acknowledge: order.Acknowledge,
+        RiderId: int64(order.RiderID),
+        UserId: int64(order.UserID),
+        PaymentStatus: string(order.PaymentStatus),
+        PickupAddress: order.PickUpAddress,
+        DropOffAddress: order.DropOffAddress,
+		Id: int64(order.ID),
+    }, nil
+}
