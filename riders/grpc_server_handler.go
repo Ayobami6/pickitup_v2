@@ -81,3 +81,32 @@ func (h *riderGrpcHandler)GetRiderByID(ctx context.Context, in *riderPb.RiderID)
     }, nil
 }
 
+
+func (h *riderGrpcHandler) GetRiderByUserID(ctx context.Context, r *riderPb.RiderUserID) (*riderPb.Rider, error) {
+	id := uint(r.UserId)
+    rider, err := h.repo.GetRiderByUserID(id)
+    if err!= nil {
+        return nil, err
+    }
+	reviews, err := h.repo.GetRiderReviews(rider.ID)
+	var parsedReviews []*riderPb.Review
+	if err!= nil {
+        return nil, err
+    }
+	for _, review := range reviews {
+		parsedReviews = append(parsedReviews, &riderPb.Review{Rating: float32(review.Rating), Comment: review.Comment, RiderId: int64(review.RiderID)})
+	}
+    return &riderPb.Rider{
+        RiderId: strconv.Itoa(int(rider.ID)),
+        FirstName: rider.FirstName,
+        LastName: rider.LastName,
+        Address: rider.Address,
+        BikeNumber: rider.BikeNumber,
+        Rating: float32(rider.Rating),
+        Level: rider.Level,
+		Reviews: parsedReviews,
+        SuccessfulRides: strconv.Itoa(int(rider.SuccessfulRides)),
+        CurrentLocation: rider.CurrentLocation,
+        UserId: int64(rider.UserID),
+    }, nil
+}
