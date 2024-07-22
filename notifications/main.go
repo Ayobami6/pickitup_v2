@@ -6,6 +6,7 @@ import (
 
 	"github.com/Ayobami6/common/broker"
 	"github.com/Ayobami6/common/utils"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 
@@ -22,9 +23,15 @@ type EmailData struct {
 
 
 func main() {
-	ch, coon := broker.ConnectRabbit()
+	ch, conn := broker.ConnectRabbit()
 	// Consume messages from the "order_notification" queue
-	defer coon.Close()
+	listenOrderNotification(ch, conn)
+	
+	
+}
+
+func listenOrderNotification(ch *amqp091.Channel, conn *amqp091.Connection) {
+	defer conn.Close()
 	defer ch.Close()
 	q, err := ch.QueueDeclare(
 		"order_notification",
@@ -65,5 +72,5 @@ func main() {
     }()
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever // hang until manually closed
-	
+
 }

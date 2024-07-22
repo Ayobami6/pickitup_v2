@@ -224,3 +224,6 @@ func (h *OrderClientHandler)HandleGetOrder(w http.ResponseWriter, r *http.Reques
     utils.WriteJSON(w, http.StatusOK, "success", order, "Order retrieved successfully")
 }
 
+// TODO: Implement UpdateAcknowledgeStatus - restricted to only Riders
+// TODO: UpdateDeliveryStatus - restricted to only users
+
