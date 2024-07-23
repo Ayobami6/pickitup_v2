@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strconv"
 
 	riderPb "github.com/Ayobami6/common/proto/riders"
 	"google.golang.org/grpc"
@@ -45,3 +46,67 @@ func (h *riderGrpcHandler)CreateRider(ctx context.Context, body *riderPb.CreateR
 
 }
 
+func (h *riderGrpcHandler)GetRiderByID(ctx context.Context, in *riderPb.RiderID) (*riderPb.Rider, error) {
+	id := uint(in.RiderId)
+    rider, err := h.repo.GetRiderByID(id)
+    if err!= nil {
+        return nil, err
+    }
+	// get all reviews 
+	reviews, err := h.repo.GetRiderReviews(id)
+	var parsedReviews []*riderPb.Review
+	if err!= nil {
+        return nil, err
+    }
+	for _, review := range reviews {
+		parsedReviews = append(parsedReviews, &riderPb.Review{Rating: float32(review.Rating), Comment: review.Comment, RiderId: int64(review.RiderID)})
+	}
+	
+    return &riderPb.Rider{
+        RiderId: strconv.Itoa(int(rider.ID)),
+        FirstName: rider.FirstName,
+        LastName: rider.LastName,
+        Address: rider.Address,
+		AvailabilityStatus: string(rider.AvailabilityStatus),
+        BikeNumber: rider.BikeNumber,
+        Rating: float32(rider.Rating),
+		Level: rider.Level,
+		SuccessfulRides: strconv.Itoa(int(rider.SuccessfulRides)),
+		CurrentLocation: rider.CurrentLocation,
+		Reviews: parsedReviews,
+		MaximumCharge: float32(rider.MaximumCharge),
+		MinimumCharge: float32(rider.MinimumCharge),
+		UserId: int64(rider.UserID),
+
+    }, nil
+}
+
+
+func (h *riderGrpcHandler) GetRiderByUserID(ctx context.Context, r *riderPb.RiderUserID) (*riderPb.Rider, error) {
+	id := uint(r.UserId)
+    rider, err := h.repo.GetRiderByUserID(id)
+    if err!= nil {
+        return nil, err
+    }
+	reviews, err := h.repo.GetRiderReviews(rider.ID)
+	var parsedReviews []*riderPb.Review
+	if err!= nil {
+        return nil, err
+    }
+	for _, review := range reviews {
+		parsedReviews = append(parsedReviews, &riderPb.Review{Rating: float32(review.Rating), Comment: review.Comment, RiderId: int64(review.RiderID)})
+	}
+    return &riderPb.Rider{
+        RiderId: strconv.Itoa(int(rider.ID)),
+        FirstName: rider.FirstName,
+        LastName: rider.LastName,
+        Address: rider.Address,
+        BikeNumber: rider.BikeNumber,
+        Rating: float32(rider.Rating),
+        Level: rider.Level,
+		Reviews: parsedReviews,
+        SuccessfulRides: strconv.Itoa(int(rider.SuccessfulRides)),
+        CurrentLocation: rider.CurrentLocation,
+        UserId: int64(rider.UserID),
+    }, nil
+}

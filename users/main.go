@@ -78,7 +78,7 @@ func startUserService() {
         log.Fatal(err)
     }
 	userRepo := NewUserRepoImpl(Db)
-	NewUsersGrpcHandler(grpcServer, userRepo)
+	NewUsersGrpcHandler(grpcServer, userRepo, Db)
 	log.Println("User Service is running... on port 5005")
 
 	if err := grpcServer.Serve(l); err!= nil {

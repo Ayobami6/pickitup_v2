@@ -36,11 +36,12 @@ message Rider {
     repeated Review reviews = 13;
     float minimum_charge = 14;
     float maximum_charge = 15;
+    int64 user_id = 16;
 }
 
 message Review {
     int64 user_id = 1;
-    int32 rating = 2;
+    float rating = 2;
     int64 rider_id = 3;
     string comment = 4;
 }

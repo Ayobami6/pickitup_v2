@@ -26,6 +26,7 @@ type UserServiceClient interface {
 	LoginUser(ctx context.Context, in *UserLoginPayload, opts ...grpc.CallOption) (*LoginResponse, error)
 	CreateRating(ctx context.Context, in *ReviewRequest, opts ...grpc.CallOption) (*ReviewMessage, error)
 	GetUserByID(ctx context.Context, in *UserIDMessage, opts ...grpc.CallOption) (*User, error)
+	ChargeUserWallet(ctx context.Context, in *ChargeRequest, opts ...grpc.CallOption) (*ChargeResponse, error)
 }
 
 type userServiceClient struct {
@@ -72,6 +73,15 @@ func (c *userServiceClient) GetUserByID(ctx context.Context, in *UserIDMessage, 
 	return out, nil
 }
 
+func (c *userServiceClient) ChargeUserWallet(ctx context.Context, in *ChargeRequest, opts ...grpc.CallOption) (*ChargeResponse, error) {
+	out := new(ChargeResponse)
+	err := c.cc.Invoke(ctx, "/proto.UserService/ChargeUserWallet", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -80,6 +90,7 @@ type UserServiceServer interface {
 	LoginUser(context.Context, *UserLoginPayload) (*LoginResponse, error)
 	CreateRating(context.Context, *ReviewRequest) (*ReviewMessage, error)
 	GetUserByID(context.Context, *UserIDMessage) (*User, error)
+	ChargeUserWallet(context.Context, *ChargeRequest) (*ChargeResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -98,6 +109,9 @@ func (UnimplementedUserServiceServer) CreateRating(context.Context, *ReviewReque
 }
 func (UnimplementedUserServiceServer) GetUserByID(context.Context, *UserIDMessage) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserByID not implemented")
+}
+func (UnimplementedUserServiceServer) ChargeUserWallet(context.Context, *ChargeRequest) (*ChargeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChargeUserWallet not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -184,6 +198,24 @@ func _UserService_GetUserByID_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ChargeUserWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChargeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ChargeUserWallet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.UserService/ChargeUserWallet",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ChargeUserWallet(ctx, req.(*ChargeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -206,6 +238,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserByID",
 			Handler:    _UserService_GetUserByID_Handler,
+		},
+		{
+			MethodName: "ChargeUserWallet",
+			Handler:    _UserService_ChargeUserWallet_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
