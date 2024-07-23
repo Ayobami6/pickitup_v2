@@ -136,6 +136,21 @@ func (h *usersGrpcHandler)ChargeUserWallet(ctx context.Context, in *userPb.Charg
 	message := &userPb.ChargeResponse{}
 
 	return message, nil
-    
 }
 
+func (h *usersGrpcHandler)CreditUserWallet(ctx context.Context, payload *userPb.ChargeRequest)(*userPb.ChargeResponse, error ) {
+	userId := payload.UserId
+    charge := payload.Charge
+    // get the user 
+    user, err := h.repo.GetUserByID(uint(userId))
+    if err!= nil {
+        return nil, errors.New("user not found")
+    }
+    err = user.Credit(h.db, float64(charge))
+    if err!= nil {
+        return nil, errors.New("failed to credit user wallet")
+    }
+    message := &userPb.ChargeResponse{}
+
+    return message, nil
+}

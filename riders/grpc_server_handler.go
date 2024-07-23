@@ -110,3 +110,13 @@ func (h *riderGrpcHandler) GetRiderByUserID(ctx context.Context, r *riderPb.Ride
         UserId: int64(rider.UserID),
     }, nil
 }
+
+
+func (h *riderGrpcHandler)UpdateRiderSuccessfulRides(ctx context.Context, payload *riderPb.UpdateRiderSuccessfulRidesRequest) (*riderPb.UpdateResponse, error) {
+	riderID := payload.RiderId
+	err := h.repo.UpdateRiderSuccessfulRides(uint(riderID))
+	if err!= nil {
+        return nil, err
+    }
+	return &riderPb.UpdateResponse{}, nil
+}

@@ -68,4 +68,5 @@ service UserService {
     rpc CreateRating (ReviewRequest) returns (ReviewMessage){};
     rpc GetUserByID (UserIDMessage) returns(User){};
     rpc ChargeUserWallet (ChargeRequest) returns (ChargeResponse) {};
+    rpc CreditUserWallet(ChargeRequest) returns (ChargeResponse) {};
 }
