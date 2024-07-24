@@ -284,7 +284,7 @@ func (h *OrderClientHandler)HandleUpdateDeliveryStatus(w http.ResponseWriter, r 
     }
 	// update rider successful rides
 	_, nErr := h.riderClient.UpdateRiderSuccessfulRides(ctx, &pbRider.UpdateRiderSuccessfulRidesRequest{
-		RiderId: rider.Id,
+		RiderId: int64(id),
 	})
 	if nErr != nil {
         log.Println("Error updating rider successful rides")
