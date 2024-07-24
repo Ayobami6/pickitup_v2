@@ -112,11 +112,11 @@ func (h *riderGrpcHandler) GetRiderByUserID(ctx context.Context, r *riderPb.Ride
 }
 
 
-func (h *riderGrpcHandler)UpdateRiderSuccessfulRides(ctx context.Context, payload *riderPb.UpdateRiderSuccessfulRidesRequest) (*riderPb.UpdateResponse, error) {
+func (h *riderGrpcHandler)UpdateRiderSuccessfulRides(ctx context.Context, payload *riderPb.UpdateRiderSuccessfulRidesRequest) (*riderPb.UpdateRiderResponse, error) {
 	riderID := payload.RiderId
 	err := h.repo.UpdateRiderSuccessfulRides(uint(riderID))
 	if err!= nil {
         return nil, err
     }
-	return &riderPb.UpdateResponse{}, nil
+	return &riderPb.UpdateRiderResponse{}, nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/Ayobami6/common/config"
 	"github.com/Ayobami6/common/utils"
 	"github.com/rabbitmq/amqp091-go"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -27,26 +26,40 @@ type EmailData struct {
 	RiderEmail string `json:"riderEmail" bson:"riderEmail"`
 }
 
+type OrderStatusData struct {
+	OrderID  string `json:"orderID" bson:"orderID"`
+	Status      string `json:"status" bson:"status"`
+	RiderUsername string `json:"riderUsername" bson:"riderUsername"`
+	RiderEmail string `json:"riderEmail" bson:"riderEmail"`
+	Message string `json:"message" bson:"message"`
+	Subject string `json:"subject" bson:"subject"`
+}
+
 
 var mongoString = config.GetEnv("MONGO_STRING", "mongodb://user:user@localhost:27017")
 
 
 func main() {
 	ch, conn := broker.ConnectRabbit()
+	defer conn.Close()
+    defer ch.Close()
 	// connect mongodb
 	client, err := connectMongoDB(mongoString)
 	if err!= nil {
         log.Fatal(err)
     }
+	var forever chan struct{}
 	// Consume messages from the "order_notification" queue
-	listenOrderNotification(ch, conn, client)
+	listenOrderNotification(ch, client)
+	// Consume messages from the "order_status_change" queue
+	listenOrderStatusChange(ch, client)
+
+	<-forever
 	
 	
 }
 
-func listenOrderNotification(ch *amqp091.Channel, conn *amqp091.Connection, mongoClient *mongo.Client) {
-	defer conn.Close()
-	defer ch.Close()
+func listenOrderNotification(ch *amqp091.Channel,  mongoClient *mongo.Client) {
 	q, err := ch.QueueDeclare(
 		"order_notification",
 		false,
@@ -71,7 +84,7 @@ func listenOrderNotification(ch *amqp091.Channel, conn *amqp091.Connection, mong
 		log.Fatalf("Failed to consume messages: %v", err)
 	}
 	collection := mongoClient.Database("notifications").Collection("order_notifications")
-	var forever chan struct{}
+	// var forever chan struct{}
 	go func() {
         for d := range msgs {
             log.Printf("Received a message: %s", d.Body)
@@ -83,19 +96,71 @@ func listenOrderNotification(ch *amqp091.Channel, conn *amqp091.Connection, mong
             }
 			go utils.SendMail(data.UserEmail, data.Subject, data.UserUsername, data.UserMessage)
 			go utils.SendMail(data.RiderEmail, data.Subject, data.RiderName, data.RiderMessage)
-			var doc bson.D
-			bsonData, _ := bson.Marshal(d.Body)
-    		err = bson.Unmarshal(bsonData, &doc)
-			insertResult, err := collection.InsertOne(context.TODO(), doc)
+			// var doc bson.D
+			// bsonData, _ := bson.Marshal(d.Body)
+    		// err = bson.Unmarshal(bsonData, &doc)
+			insertResult, err := collection.InsertOne(context.TODO(), data)
 			if err != nil {
 				log.Fatal(err)
 			}
 			fmt.Println("Inserted a single document: ", insertResult.InsertedID)	
         }	
     }()
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	<-forever // hang until manually closed
+	log.Printf(" [*] Waiting for messages from %s queue. To exit press CTRL+C \n", q.Name)
+	// <-forever
 
+}
+
+func listenOrderStatusChange(ch *amqp091.Channel, mongoClient *mongo.Client){
+    q, err := ch.QueueDeclare(
+        "delivery_status_change",
+        false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("Failed to declare order status change: %v", err)
+	}
+	msgs, err := ch.Consume(
+        q.Name,
+        "",   
+        true, 
+        false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("Fail to consume %s: %v", q.Name, err)
+	}
+	collection := mongoClient.Database("notifications").Collection("order_status_notifications")
+	go func() {
+		for d := range msgs {
+			log.Printf("Received a message: %s", d.Body)
+			var data OrderStatusData
+			if err := json.Unmarshal(d.Body, &data); err!= nil {
+                log.Fatalf("Error unmarshalling JSON: %s", err)
+                continue
+            }
+			// send mail 
+			go utils.SendMail(data.RiderEmail, data.Subject, data.RiderUsername, data.Message)
+			// var doc bson.D
+			// bsonData, _ := bson.Marshal(d.Body)
+			// err = bson.Unmarshal(bsonData, &doc)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+			insertResult, err := collection.InsertOne(context.TODO(), data)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("Inserted a single document: ", insertResult.InsertedID)	
+
+		}
+	}()
+	log.Printf(" [*] Waiting for messages from %s queue. To exit press CTRL+C \n", q.Name)
 }
 
 

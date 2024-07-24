@@ -82,7 +82,7 @@ message UpdateAvailabiltyStatusPayLoad {
 message UpdateRiderSuccessfulRidesRequest {
     int64 rider_id = 1;
 }
-message UpdateResponse {}
+message UpdateRiderResponse {}
 
 service RiderService {
     rpc CreateRider(CreateRiderPayload) returns (CreateRiderResponse){};
@@ -92,5 +92,5 @@ service RiderService {
     rpc UpdateRating(RiderID) returns (ResponseMessage){};
     rpc UpdateMinAndMaxCharge(ChargeUpdatePayload) returns (ResponseMessage){};
     rpc UpdateAvailabilityStatus(UpdateAvailabiltyStatusPayLoad) returns (ResponseMessage){};
-    rpc UpdateRiderSuccessfulRides(UpdateRiderSuccessfulRidesRequest) returns (UpdateResponse){}; //
+    rpc UpdateRiderSuccessfulRides(UpdateRiderSuccessfulRidesRequest) returns (UpdateRiderResponse){}; //
 }

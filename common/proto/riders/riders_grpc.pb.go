@@ -29,7 +29,7 @@ type RiderServiceClient interface {
 	UpdateRating(ctx context.Context, in *RiderID, opts ...grpc.CallOption) (*ResponseMessage, error)
 	UpdateMinAndMaxCharge(ctx context.Context, in *ChargeUpdatePayload, opts ...grpc.CallOption) (*ResponseMessage, error)
 	UpdateAvailabilityStatus(ctx context.Context, in *UpdateAvailabiltyStatusPayLoad, opts ...grpc.CallOption) (*ResponseMessage, error)
-	UpdateRiderSuccessfulRides(ctx context.Context, in *UpdateRiderSuccessfulRidesRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
+	UpdateRiderSuccessfulRides(ctx context.Context, in *UpdateRiderSuccessfulRidesRequest, opts ...grpc.CallOption) (*UpdateRiderResponse, error)
 }
 
 type riderServiceClient struct {
@@ -103,8 +103,8 @@ func (c *riderServiceClient) UpdateAvailabilityStatus(ctx context.Context, in *U
 	return out, nil
 }
 
-func (c *riderServiceClient) UpdateRiderSuccessfulRides(ctx context.Context, in *UpdateRiderSuccessfulRidesRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
-	out := new(UpdateResponse)
+func (c *riderServiceClient) UpdateRiderSuccessfulRides(ctx context.Context, in *UpdateRiderSuccessfulRidesRequest, opts ...grpc.CallOption) (*UpdateRiderResponse, error) {
+	out := new(UpdateRiderResponse)
 	err := c.cc.Invoke(ctx, "/proto.RiderService/UpdateRiderSuccessfulRides", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ type RiderServiceServer interface {
 	UpdateRating(context.Context, *RiderID) (*ResponseMessage, error)
 	UpdateMinAndMaxCharge(context.Context, *ChargeUpdatePayload) (*ResponseMessage, error)
 	UpdateAvailabilityStatus(context.Context, *UpdateAvailabiltyStatusPayLoad) (*ResponseMessage, error)
-	UpdateRiderSuccessfulRides(context.Context, *UpdateRiderSuccessfulRidesRequest) (*UpdateResponse, error)
+	UpdateRiderSuccessfulRides(context.Context, *UpdateRiderSuccessfulRidesRequest) (*UpdateRiderResponse, error)
 	mustEmbedUnimplementedRiderServiceServer()
 }
 
@@ -152,7 +152,7 @@ func (UnimplementedRiderServiceServer) UpdateMinAndMaxCharge(context.Context, *C
 func (UnimplementedRiderServiceServer) UpdateAvailabilityStatus(context.Context, *UpdateAvailabiltyStatusPayLoad) (*ResponseMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAvailabilityStatus not implemented")
 }
-func (UnimplementedRiderServiceServer) UpdateRiderSuccessfulRides(context.Context, *UpdateRiderSuccessfulRidesRequest) (*UpdateResponse, error) {
+func (UnimplementedRiderServiceServer) UpdateRiderSuccessfulRides(context.Context, *UpdateRiderSuccessfulRidesRequest) (*UpdateRiderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRiderSuccessfulRides not implemented")
 }
 func (UnimplementedRiderServiceServer) mustEmbedUnimplementedRiderServiceServer() {}

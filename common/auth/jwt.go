@@ -74,7 +74,7 @@ func RiderAuth(handlerFunc http.HandlerFunc, riderClient pbRider.RiderServiceCli
             if _, ok := token.Method.(*jwt.SigningMethodHMAC);!ok {
                 return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
             }
-            return []byte(config.GetEnv("JWT_SECRET", "")), nil
+            return []byte(config.GetEnv("JWT_SECRET", "secret")), nil
         })
 		if err!= nil ||!token.Valid {
 			log.Println("TokenValid error: ", err)
@@ -131,7 +131,7 @@ func UserAuth(handlerFunc http.HandlerFunc, riderClient pbRider.RiderServiceClie
             if _, ok := token.Method.(*jwt.SigningMethodHMAC);!ok {
                 return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
             }
-            return []byte(config.GetEnv("JWT_SECRET", "")), nil
+            return []byte(config.GetEnv("JWT_SECRET", "secret")), nil
         })
 		if err!= nil || !token.Valid {
 			log.Println("This is sign token error",err)
