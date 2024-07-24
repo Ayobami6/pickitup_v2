@@ -283,6 +283,10 @@ func (h *OrderClientHandler)HandleUpdateDeliveryStatus(w http.ResponseWriter, r 
 	if nErr != nil {
         log.Println("Error updating rider successful rides")
     }
+	/**
+	TODO: Add email notification queue
+	*/
+	
 	utils.WriteJSON(w, http.StatusOK, "success", order, "Order status updated successfully")
 
 }
