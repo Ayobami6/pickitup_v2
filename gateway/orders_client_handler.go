@@ -241,8 +241,26 @@ func (h *OrderClientHandler)HandleUpdateDeliveryStatus(w http.ResponseWriter, r 
 		utils.WriteError(w, http.StatusBadRequest, "Invalid order status")
         return
     }
-	var orderId uint = uint(id)
 	ctx := r.Context()
+	var orderId uint = uint(id)
+	// get order by id
+	order, err := h.client.GetOrder(ctx, &pb.GetOrderRequest{
+        Id: int64(orderId),
+    })
+	if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to get order")
+        return
+    }
+	if order.Status == "Delivered" {
+		utils.WriteError(w, http.StatusBadRequest, "Order Already Delivered!")
+		return
+	}
+	// get user Id from context
+	userID := auth.GetUserIDFromContext(ctx)
+	if order.UserId != int64(userID) {
+		utils.WriteError(w, http.StatusForbidden, "Unauthorized to update this order")
+        return
+    }
 	_, err = h.client.UpdateDeliveryStatus(ctx, &pb.UpdateDeliveryStatusRequest{
 		Id: int64(orderId),
         Status: orderStatus,
@@ -251,15 +269,7 @@ func (h *OrderClientHandler)HandleUpdateDeliveryStatus(w http.ResponseWriter, r 
         utils.WriteError(w, http.StatusInternalServerError, "Failed to update order status")
         return
     }
-	// get order by id
-	order, err := h.client.GetOrder(ctx, &pb.GetOrderRequest{
-        Id: int64(orderId),
-    })
-    if err!= nil {
-        utils.WriteError(w, http.StatusInternalServerError, "Failed to get order")
-        return
-    }
-
+	
 	riderId := order.RiderId
 	rider, err := h.riderClient.GetRiderByID(ctx, &pbRider.RiderID{RiderId: int64(riderId)})
 
