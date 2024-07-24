@@ -121,3 +121,13 @@ func (r *RiderRepoImpl) UpdateRiderAvailability(riderId uint, status string) err
     }
     return nil
 }
+
+func (r *RiderRepoImpl)UpdateRiderSuccessfulRides(riderId uint) error {
+    rider, err := r.GetRiderByID(riderId)
+    if err!= nil {
+        log.Printf("Unable to get rider %d\n", riderId)
+        return err
+    }
+    rider.UpdateSuccessfulRides(r.db)
+    return nil
+}

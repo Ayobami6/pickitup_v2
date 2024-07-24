@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/Ayobami6/common/broker"
 	"github.com/Ayobami6/common/config"
 	"github.com/Ayobami6/common/db"
 	"github.com/hashicorp/consul/api"
@@ -62,6 +63,9 @@ func updateHealthCheck(client *api.Client) {
 } 
 
 func startUserService() {
+    ch, coon := broker.ConnectRabbit() 
+	defer coon.Close()
+	defer ch.Close()
 	grpcServer := grpc.NewServer()
 	l, err := net.Listen("tcp", "localhost:5005")
 	if err != nil {
@@ -78,7 +82,7 @@ func startUserService() {
         log.Fatal(err)
     }
 	userRepo := NewUserRepoImpl(Db)
-	NewUsersGrpcHandler(grpcServer, userRepo, Db)
+	NewUsersGrpcHandler(grpcServer, userRepo, Db, ch)
 	log.Println("User Service is running... on port 5005")
 
 	if err := grpcServer.Serve(l); err!= nil {

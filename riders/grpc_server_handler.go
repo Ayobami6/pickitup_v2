@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"strconv"
 
 	riderPb "github.com/Ayobami6/common/proto/riders"
@@ -109,4 +110,40 @@ func (h *riderGrpcHandler) GetRiderByUserID(ctx context.Context, r *riderPb.Ride
         CurrentLocation: rider.CurrentLocation,
         UserId: int64(rider.UserID),
     }, nil
+}
+
+
+func (h *riderGrpcHandler)UpdateRiderSuccessfulRides(ctx context.Context, payload *riderPb.UpdateRiderSuccessfulRidesRequest) (*riderPb.UpdateRiderResponse, error) {
+	riderID := payload.RiderId
+	err := h.repo.UpdateRiderSuccessfulRides(uint(riderID))
+	if err!= nil {
+        return nil, err
+    }
+	return &riderPb.UpdateRiderResponse{}, nil
+}
+
+// get riders 
+func (h *riderGrpcHandler)GetRiders(ctx context.Context, payload *riderPb.GetRidersRequest)(*riderPb.GetRidersResponse, error ){
+	riders, err := h.repo.GetRiders()
+    var parsedRiders []*riderPb.Rider
+    if err != nil {
+		log.Printf("Couldn't fetch riders %v \n", err)
+        return nil, err
+    }
+	for _, rider := range riders {
+		parsedRiders = append(parsedRiders, &riderPb.Rider{
+			RiderId: strconv.Itoa(int(rider.ID)),
+			FirstName: rider.FirstName,
+			LastName: rider.LastName,
+			Address: rider.Address,
+			BikeNumber: rider.BikeNumber,
+			Rating: float32(rider.Rating),
+			Level: rider.Level,
+			SuccessfulRides: strconv.Itoa(int(rider.SuccessfulRides)),
+			CurrentLocation: rider.CurrentLocation,
+			UserId: int64(rider.UserID),
+		})
+	}
+    return &riderPb.GetRidersResponse{Riders: parsedRiders}, nil
+
 }

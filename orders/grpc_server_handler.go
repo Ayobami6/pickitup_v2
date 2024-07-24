@@ -102,3 +102,27 @@ func (h *orderGrpcHandler)GetOrder(ctx context.Context, payload *pb.GetOrderRequ
 		Id: int64(order.ID),
     }, nil
 }
+
+func (h *orderGrpcHandler)UpdateDeliveryStatus(ctx context.Context, payload *pb.UpdateDeliveryStatusRequest) (*pb.UpdateResponse, error){
+	orderId := payload.Id
+	status := payload.Status
+
+	err := h.repo.UpdateDeliveryStatus(uint(orderId), StatusType(status))
+	if err!= nil {
+        log.Println("Error updating delivery status: ", err)
+        return nil, err
+    }
+	return &pb.UpdateResponse{Message: "Delivery status updated successfully"}, nil
+
+}
+
+func (h *orderGrpcHandler) UpdateAcknowledgement(ctx context.Context, payload *pb.UpdateAcknowledgementRequest) (*pb.UpdateResponse, error){
+	orderId := payload.Id
+	err := h.repo.UpdateAcknowledgeStatus(uint(orderId))
+	if err!= nil {
+        log.Println("Error updating acknowledgement status: ", err)
+        return nil, err
+    }
+	return &pb.UpdateResponse{Message: "Acknowledgement status updated successfully"}, nil
+
+}

@@ -24,6 +24,7 @@ func NewRiderClientHandler(client pbRider.RiderServiceClient, userClient pbUser.
 func (h *RiderClientHandler)RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/register/rider", h.HandleRiderRegister).Methods("POST")
 	router.HandleFunc("/riders/{id}", h.HandleGetRider).Methods("GET")
+	router.HandleFunc("/riders", h.HandleGetRiders).Methods("GET")
 }
 
 // handler rider register
@@ -103,6 +104,23 @@ func (h *RiderClientHandler) HandleGetRider(w http.ResponseWriter, r *http.Reque
     utils.WriteJSON(w, http.StatusOK, "success", rider, "Fetch Successful")
 }
 
+
+func (h *RiderClientHandler)HandleGetRiders(w http.ResponseWriter, r *http.Request) {
+	riders, err := h.client.GetRiders(r.Context(), &pbRider.GetRidersRequest{})
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Something went wrong")
+		return
+    }
+	domain := getDomainURL(r)
+	for _, r := range riders.Riders {
+        var selfUrl = fmt.Sprintf("%s/api/v2/riders/%s", domain, r.RiderId)
+        r.SelfUrl = selfUrl
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", riders, "Fetch Successful")
+    // TODO: handle pagination and sorting
+    // TODO: add authentication to fetch riders by user ID
+    // TODO: add rate limiting to prevent abuse
+}
 
 func getDomainURL(r *http.Request) string {
     scheme := "http"

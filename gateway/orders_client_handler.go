@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"unicode"
 
 	"github.com/Ayobami6/common/auth"
 	pb "github.com/Ayobami6/common/proto/orders"
@@ -34,6 +35,8 @@ func (h *OrderClientHandler)RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/orders/{rider_id}", auth.Auth(h.HandleCreateOrder, h.userClient)).Methods("POST")
 	router.HandleFunc("/orders", auth.Auth(h.HandleGetOrders, h.userClient)).Methods("GET")
 	router.HandleFunc("/orders/{id}", auth.Auth(h.HandleGetOrder, h.userClient)).Methods("GET")
+	router.HandleFunc("/orders/{id}/delivery", auth.UserAuth(h.HandleUpdateDeliveryStatus, h.riderClient)).Methods("PATCH")
+	router.HandleFunc("/orders/{id}/acknowledge", auth.RiderAuth(h.HandleUpdateAcknowledgement, h.riderClient)).Methods("PATCH")
 }
 
 func (h *OrderClientHandler) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -224,6 +227,143 @@ func (h *OrderClientHandler)HandleGetOrder(w http.ResponseWriter, r *http.Reques
     utils.WriteJSON(w, http.StatusOK, "success", order, "Order retrieved successfully")
 }
 
-// TODO: Implement UpdateAcknowledgeStatus - restricted to only Riders
-// TODO: UpdateDeliveryStatus - restricted to only users
+func (h *OrderClientHandler)HandleUpdateDeliveryStatus(w http.ResponseWriter, r *http.Request){
+	params := mux.Vars(r)
+	query := r.URL.Query()
+	orderStatus := query.Get("status")
+	id, err := strconv.Atoi(params["id"])
+	if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid order id")
+        return
+    }
+	orderStatus = string(unicode.ToUpper(rune(orderStatus[0]))) + orderStatus[1:]
+	if orderStatus != "Delivered" {
+		utils.WriteError(w, http.StatusBadRequest, "Invalid order status")
+        return
+    }
+	ctx := r.Context()
+	var orderId uint = uint(id)
+	// get order by id
+	order, err := h.client.GetOrder(ctx, &pb.GetOrderRequest{
+        Id: int64(orderId),
+    })
+	if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to get order")
+        return
+    }
+	if order.Status == "Delivered" {
+		utils.WriteError(w, http.StatusBadRequest, "Order Already Delivered!")
+		return
+	}
+	// get user Id from context
+	userID := auth.GetUserIDFromContext(ctx)
+	if order.UserId != int64(userID) {
+		utils.WriteError(w, http.StatusForbidden, "Unauthorized to update this order")
+        return
+    }
+	_, err = h.client.UpdateDeliveryStatus(ctx, &pb.UpdateDeliveryStatusRequest{
+		Id: int64(orderId),
+        Status: orderStatus,
+	})
+	if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to update order status")
+        return
+    }
+	
+	riderId := order.RiderId
+	rider, err := h.riderClient.GetRiderByID(ctx, &pbRider.RiderID{RiderId: int64(riderId)})
 
+	if err != nil {
+        log.Println("Error getting rider")
+    }
+	// Credit rider user
+	riderUserID := rider.UserId
+	_, cErr := h.userClient.CreditUserWallet(ctx, &pbUser.ChargeRequest{
+		UserId: int64(riderUserID),
+		Charge: float32(order.Charge),
+	})
+	if cErr!= nil {
+        log.Println("Error crediting rider user")
+    }
+	// get Rider User
+	riderUser, rErr := h.userClient.GetUserByID(ctx, &pbUser.UserIDMessage{
+		UserId: int64(riderUserID),
+	})
+	if rErr!= nil {
+        log.Println("Error getting rider user")
+    }
+	// update rider successful rides
+	_, nErr := h.riderClient.UpdateRiderSuccessfulRides(ctx, &pbRider.UpdateRiderSuccessfulRidesRequest{
+		RiderId: int64(id),
+	})
+	if nErr != nil {
+        log.Println("Error updating rider successful rides")
+    }
+	/**
+	TODO: Add email notification queue
+	*/
+	ch := h.ch
+	// add delivery status change notification
+	message := fmt.Sprintf("Your order delivery has been successfully confirmed. ₦%.1f has been added to your wallet", order.Charge)
+	subject := "Order Delivery Notification"
+	q, err := ch.QueueDeclare(
+        "delivery_status_change",
+        false,   
+        false,  
+        false,
+        false,
+        nil, 
+      )
+
+    if err != nil {
+        log.Println("Failed to declare a queue", err)
+    }
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    body, err := json.Marshal(map[string]string{
+        "orderId": string(orderId),
+        "status": orderStatus,
+		"message": message,
+        "subject": subject,
+		"riderEmail": riderUser.Email,
+		"riderUsername": riderUser.Username,
+    })
+    if err != nil {
+        log.Println("Failed to marshal data", err)
+    }
+    err = ch.PublishWithContext(ctx,
+        "",     
+        q.Name,
+        false,
+        false,
+        amqp.Publishing {
+          ContentType: "application/json",
+          Body:        body,
+    })
+
+	if err != nil {
+		log.Println("Failed to publish a message", err)
+    }
+	utils.WriteJSON(w, http.StatusOK, "success", order, "Order status updated successfully")
+
+}
+
+func (h *OrderClientHandler)HandleUpdateAcknowledgement(w http.ResponseWriter, r *http.Request){
+	// get id from param
+	params := mux.Vars(r)
+    id, err := strconv.Atoi(params["id"])
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid order id")
+        return
+    }
+    ctx := r.Context()
+    _, err = h.client.UpdateAcknowledgement(ctx, &pb.UpdateAcknowledgementRequest{
+        Id: int64(id),
+    })
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to update acknowledgement status")
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", nil, "Acknowledgement status updated successfully")
+
+}
