@@ -36,6 +36,14 @@ type OrderStatusData struct {
 }
 
 
+type EmailVerify struct {
+	Username string `json:"username" bson:"username"`
+	Email string `json:"email" bson:"email"`
+	Message string `json:"message" bson:"message"`
+	Subject string `json:"subject" bson:"subject"`
+}
+
+
 var mongoString = config.GetEnv("MONGO_STRING", "mongodb://user:user@localhost:27017")
 
 
@@ -53,6 +61,7 @@ func main() {
 	listenOrderNotification(ch, client)
 	// Consume messages from the "order_status_change" queue
 	listenOrderStatusChange(ch, client)
+	listenEmailVerification(ch, client)
 
 	<-forever
 	
@@ -146,12 +155,6 @@ func listenOrderStatusChange(ch *amqp091.Channel, mongoClient *mongo.Client){
             }
 			// send mail 
 			go utils.SendMail(data.RiderEmail, data.Subject, data.RiderUsername, data.Message)
-			// var doc bson.D
-			// bsonData, _ := bson.Marshal(d.Body)
-			// err = bson.Unmarshal(bsonData, &doc)
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
 			insertResult, err := collection.InsertOne(context.TODO(), data)
 			if err != nil {
 				log.Fatal(err)
@@ -163,6 +166,52 @@ func listenOrderStatusChange(ch *amqp091.Channel, mongoClient *mongo.Client){
 	log.Printf(" [*] Waiting for messages from %s queue. To exit press CTRL+C \n", q.Name)
 }
 
+// listen to email_verification
+func listenEmailVerification(ch *amqp091.Channel, mongoClient *mongo.Client) {
+	q, err := ch.QueueDeclare(
+        "email_verification",
+        false,
+        false,
+        false,
+        false,
+        nil,
+    )
+    if err!= nil {
+        log.Fatalf("Failed to declare email verification: %v", err)
+    }
+    msgs, err := ch.Consume(
+        q.Name,
+        "",   
+        true, 
+        false,
+        false,
+        false,
+        nil,
+    )
+    if err!= nil {
+        log.Fatalf("Failed to consume %s: %v", q.Name, err)
+    }
+    collection := mongoClient.Database("notifications").Collection("email_verification_notifications")
+	go func() {
+        for d := range msgs {
+            log.Printf("Received a message: %s", d.Body)
+            var data EmailVerify
+            if err := json.Unmarshal(d.Body, &data); err!= nil {
+                log.Fatalf("Error unmarshalling JSON: %s", err)
+                continue
+            }
+            // send mail
+            go utils.SendMail(data.Email, data.Subject, data.Username, data.Message)
+            insertResult, err := collection.InsertOne(context.TODO(), data)
+            if err!= nil {
+                log.Fatal(err)
+            }
+            fmt.Println("Inserted a single document: ", insertResult.InsertedID)    
+        }
+    }()
+    log.Printf(" [*] Waiting for messages from %s queue. To exit press CTRL+C \n", q.Name)
+
+}
 
 func connectMongoDB(db string) (*mongo.Client, error) {
 	clientOptions := options.Client().ApplyURI(db)

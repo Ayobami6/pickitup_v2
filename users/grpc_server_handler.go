@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"github.com/Ayobami6/common/config"
 	userPb "github.com/Ayobami6/common/proto/users"
 	"github.com/Ayobami6/common/utils"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )
@@ -20,10 +22,11 @@ type usersGrpcHandler struct {
 	userPb.UnimplementedUserServiceServer
 	repo UserRepo
 	db *gorm.DB
+	ch *amqp.Channel
 }
 
-func NewUsersGrpcHandler(grpcServer *grpc.Server, repo UserRepo, db *gorm.DB) {
-	handler := &usersGrpcHandler{repo: repo, db: db}
+func NewUsersGrpcHandler(grpcServer *grpc.Server, repo UserRepo, db *gorm.DB, ch *amqp.Channel) {
+	handler := &usersGrpcHandler{repo: repo, db: db, ch: ch}
     userPb.RegisterUserServiceServer(grpcServer, handler)
 }
 
@@ -64,10 +67,43 @@ func (h *usersGrpcHandler) RegisterUser(ctx context.Context, req *userPb.UserReg
     } else {
 		// send the email to verify
 		msg := fmt.Sprintf("Your verification code is %d\n", num)
-		err = utils.SendMail(email, "Email Verification", username, msg)
+		ch := h.ch
+		// declare email verification queue
+		q, err := ch.QueueDeclare(
+            "email_verification",         
+            false,               
+            false,               
+            false,               
+            false,               
+            nil,                 
+        )
         if err!= nil {
-            log.Printf("Email sending failed due to %v\n", err)
+            log.Fatalf("Failed to declare queue: %v", err)
         }
+		mailData := map[string]string{
+			"username": username,
+            "message": msg,
+			"email": email,
+			"subject": "Email Verification",
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		body, err := json.Marshal(mailData)
+		if err != nil {
+			log.Println("Failed to marshal data", err)
+		}
+		err = ch.PublishWithContext(ctx,
+			"",     
+			q.Name,
+			false,
+			false,
+			amqp.Publishing {
+			  ContentType: "application/json",
+			  Body:        body,
+			})
+		if err!= nil {
+			log.Println("Failed to publish a message", err)
+		}
 	}
 	message := &userPb.RegisterMessage{
 		Message: "User successfully created!",
