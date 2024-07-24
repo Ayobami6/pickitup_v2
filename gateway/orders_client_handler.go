@@ -275,7 +275,13 @@ func (h *OrderClientHandler)HandleUpdateDeliveryStatus(w http.ResponseWriter, r 
 	if cErr!= nil {
         log.Println("Error crediting rider user")
     }
-	
+	// get Rider User
+	riderUser, rErr := h.userClient.GetUserByID(ctx, &pbUser.UserIDMessage{
+		UserId: int64(riderUserID),
+	})
+	if rErr!= nil {
+        log.Println("Error getting rider user")
+    }
 	// update rider successful rides
 	_, nErr := h.riderClient.UpdateRiderSuccessfulRides(ctx, &pbRider.UpdateRiderSuccessfulRidesRequest{
 		RiderId: rider.Id,
@@ -286,7 +292,48 @@ func (h *OrderClientHandler)HandleUpdateDeliveryStatus(w http.ResponseWriter, r 
 	/**
 	TODO: Add email notification queue
 	*/
-	
+	ch := h.ch
+	// add delivery status change notification
+	message := fmt.Sprintf("Your order delivery has been successfully confirmed. ₦%.1f has been added to your wallet", order.Charge)
+	subject := "Order Delivery Notification"
+	q, err := ch.QueueDeclare(
+        "delivery_status_change",
+        false,   
+        false,  
+        false,
+        false,
+        nil, 
+      )
+
+    if err != nil {
+        log.Println("Failed to declare a queue", err)
+    }
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    body, err := json.Marshal(map[string]string{
+        "orderId": string(orderId),
+        "status": orderStatus,
+		"message": message,
+        "subject": subject,
+		"riderEmail": riderUser.Email,
+		"riderUsername": riderUser.Username,
+    })
+    if err != nil {
+        log.Println("Failed to marshal data", err)
+    }
+    err = ch.PublishWithContext(ctx,
+        "",     
+        q.Name,
+        false,
+        false,
+        amqp.Publishing {
+          ContentType: "application/json",
+          Body:        body,
+    })
+
+	if err != nil {
+		log.Println("Failed to publish a message", err)
+    }
 	utils.WriteJSON(w, http.StatusOK, "success", order, "Order status updated successfully")
 
 }
