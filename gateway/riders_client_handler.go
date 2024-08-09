@@ -178,14 +178,10 @@ func(h *RiderClientHandler)HandleUpdateStatus(w http.ResponseWriter, r *http.Req
     }
     ctx := r.Context()
     riderId := auth.GetRiderIDFromContext(ctx)
-	log.Println("This is the riderId: ", riderId)
     if riderId == -1 {
-		log.Println("Got here")
         auth.Forbidden(w)
         return
     }
-	log.Println("This is the id: ", id)
-	log.Println("This is the riderId: ", riderId)
     if int64(id)!= int64(riderId) {
         auth.Forbidden(w)
         return
