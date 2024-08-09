@@ -55,6 +55,7 @@ func GetUserIDFromContext(ctx context.Context) int {
 
 func GetRiderIDFromContext(ctx context.Context) int {
 	riderID, ok := ctx.Value(RiderKey).(int)
+	log.Println(riderID, ok)
     if!ok {
         return -1
     }
@@ -116,9 +117,15 @@ func RiderAuth(handlerFunc http.HandlerFunc, riderClient pbRider.RiderServiceCli
 			Forbidden(w)
 			return
 		}
+		riderId, err := strconv.Atoi(rider.RiderId)
+		if err!= nil {
+            log.Println("Atoi Convert error: ", err)
+            utils.WriteError(w, http.StatusInternalServerError, "Don't Panic This is From Us!")
+            return
+        }
 		// save Rider Id to the request context
 		ctx := context.WithValue(r.Context(), UserKey, userID)
-        ctx = context.WithValue(ctx, RiderKey, rider.Id)
+        ctx = context.WithValue(ctx, RiderKey, riderId)
         r = r.WithContext(ctx)
         handlerFunc(w, r)
 	}

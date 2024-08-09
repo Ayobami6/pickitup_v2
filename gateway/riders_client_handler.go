@@ -28,6 +28,7 @@ func (h *RiderClientHandler)RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/riders/{id}", h.HandleGetRider).Methods("GET")
 	router.HandleFunc("/riders", h.HandleGetRiders).Methods("GET")
 	router.HandleFunc("/riders/{id}/charge-update",  auth.RiderAuth(h.HandleUpdateRiderCharge, h.client)).Methods("PUT")
+	router.HandleFunc("/riders/{id}/status-update",  auth.RiderAuth(h.HandleUpdateStatus, h.client)).Methods("PATCH")
 }
 
 // handler rider register
@@ -139,6 +140,7 @@ func(h *RiderClientHandler)HandleUpdateRiderCharge(w http.ResponseWriter, r *htt
 	fmt.Println("This is user userId: ", userId)
 	fmt.Println("This is id: ", id)
 	if userId == -1 {
+		fmt.Println("Got here")
         auth.Forbidden(w)
         return
     }
@@ -165,6 +167,56 @@ func(h *RiderClientHandler)HandleUpdateRiderCharge(w http.ResponseWriter, r *htt
     }
 	utils.WriteJSON(w, http.StatusOK, "success", response, "Charge updated successfully")
 
+}
+
+func(h *RiderClientHandler)HandleUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+    id, err := strconv.Atoi(params["id"])
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid ID")
+        return
+    }
+    ctx := r.Context()
+    riderId := auth.GetRiderIDFromContext(ctx)
+	log.Println("This is the riderId: ", riderId)
+    if riderId == -1 {
+		log.Println("Got here")
+        auth.Forbidden(w)
+        return
+    }
+	log.Println("This is the id: ", id)
+	log.Println("This is the riderId: ", riderId)
+    if int64(id)!= int64(riderId) {
+        auth.Forbidden(w)
+        return
+    }
+    var payload dto.UpdateStatusDTO
+    err = utils.ParseJSON(r, &payload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid Payload")
+        return
+    }
+	// TODO Add status type validation
+	statusMap := map[string]bool{
+		"Available": true,
+		"Unavailable": true,
+		"On Break": true,
+		"Busy": true,
+	}
+	if !statusMap[payload.Status] {
+		utils.WriteError(w, http.StatusBadRequest, "Invalid availability status")
+		return
+	}
+	// update status
+	res, err := h.client.UpdateAvailabilityStatus(ctx, &pbRider.UpdateAvailabiltyStatusPayLoad{
+		RiderId: int64(riderId),
+		Status: payload.Status,
+	})
+	if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to update status")
+        return
+    }
+	utils.WriteJSON(w, http.StatusOK, "success", res, "Status updated successfully")
 }
 
 func getDomainURL(r *http.Request) string {

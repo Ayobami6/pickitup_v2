@@ -164,3 +164,15 @@ func(h *riderGrpcHandler)UpdateMinAndMaxCharge(ctx context.Context, payload *rid
 
     return &riderPb.ResponseMessage{Message: "Rider's charge range successfully updated!"}, nil
 }
+
+func (h *riderGrpcHandler)UpdateAvailabilityStatus(ctx context.Context, pl *riderPb.UpdateAvailabiltyStatusPayLoad) (*riderPb.ResponseMessage, error) {
+	riderId := pl.RiderId
+	status := pl.Status
+	err := h.repo.UpdateRiderAvailability(uint(riderId), status)
+	if err!= nil {
+        log.Printf("Couldn't update rider's availability status %v \n", err.Error())
+        return nil, err
+    }
+	return &riderPb.ResponseMessage{Message: "Rider's availability status successfully updated!"}, nil
+
+}
