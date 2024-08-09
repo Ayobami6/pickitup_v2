@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -146,4 +147,20 @@ func (h *riderGrpcHandler)GetRiders(ctx context.Context, payload *riderPb.GetRid
 	}
     return &riderPb.GetRidersResponse{Riders: parsedRiders}, nil
 
+}
+
+// update rider charge
+
+func(h *riderGrpcHandler)UpdateMinAndMaxCharge(ctx context.Context, payload *riderPb.ChargeUpdatePayload) (*riderPb.ResponseMessage, error){
+	minCharge := float64(payload.MinimumCharge)
+    maxCharge := float64(payload.MaximumCharge)
+	userId := payload.UserId
+	fmt.Println("I got here", minCharge, maxCharge, userId)
+    err := h.repo.UpdateMinAndMaxCharge(minCharge, maxCharge, uint(userId))
+    if err!= nil {
+		log.Printf("Couldn't update rider's charge range %v \n", err.Error())
+        return nil, err
+    }
+
+    return &riderPb.ResponseMessage{Message: "Rider's charge range successfully updated!"}, nil
 }

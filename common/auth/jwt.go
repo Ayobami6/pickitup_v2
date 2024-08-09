@@ -100,15 +100,19 @@ func RiderAuth(handlerFunc http.HandlerFunc, riderClient pbRider.RiderServiceCli
             return
         }
 		var ID uint = uint(userID)
+		log.Println(ID)
 		// get rider by the user ID
 		rider, err := riderClient.GetRiderByUserID(r.Context(), &pbRider.RiderUserID{
 			UserId: int64(ID),
 		})
+		log.Println(rider)
 		if err != nil {
+			log.Println(err)
 			Forbidden(w)
 			return
 		}
-		if rider.Id == 0 {
+		if rider.UserId == 0 {
+			log.Println("Rider not found",)
 			Forbidden(w)
 			return
 		}

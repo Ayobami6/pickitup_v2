@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Ayobami6/common/auth"
 	pbRider "github.com/Ayobami6/common/proto/riders"
 	pbUser "github.com/Ayobami6/common/proto/users"
 	"github.com/Ayobami6/common/utils"
+	"github.com/Ayobami6/gateway/dto"
 	"github.com/gorilla/mux"
 )
 
@@ -25,6 +27,7 @@ func (h *RiderClientHandler)RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/register/rider", h.HandleRiderRegister).Methods("POST")
 	router.HandleFunc("/riders/{id}", h.HandleGetRider).Methods("GET")
 	router.HandleFunc("/riders", h.HandleGetRiders).Methods("GET")
+	router.HandleFunc("/riders/{id}/charge-update",  auth.RiderAuth(h.HandleUpdateRiderCharge, h.client)).Methods("PUT")
 }
 
 // handler rider register
@@ -120,6 +123,48 @@ func (h *RiderClientHandler)HandleGetRiders(w http.ResponseWriter, r *http.Reque
     // TODO: handle pagination and sorting
     // TODO: add authentication to fetch riders by user ID
     // TODO: add rate limiting to prevent abuse
+}
+
+func(h *RiderClientHandler)HandleUpdateRiderCharge(w http.ResponseWriter, r *http.Request){
+	// get user Id from auth context
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	fmt.Println(id)
+	if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid ID")
+        return
+    }
+	ctx := r.Context()
+	userId := auth.GetUserIDFromContext(ctx)
+	fmt.Println("This is user userId: ", userId)
+	fmt.Println("This is id: ", id)
+	if userId == -1 {
+        auth.Forbidden(w)
+        return
+    }
+	if int64(id) != int64(userId) {
+		auth.Forbidden(w)
+        return
+	}
+	var payload dto.UpdateChargeDTO
+	err = utils.ParseJSON(r, &payload)
+	if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid Payload")
+        return
+    }
+	fmt.Println(payload)
+	response, err := h.client.UpdateMinAndMaxCharge(ctx, &pbRider.ChargeUpdatePayload{
+		MaximumCharge: float32(payload.MaximumCharge),
+		MinimumCharge: float32(payload.MinimumCharge),
+		UserId: int64(userId),
+	})
+	if err!= nil {
+		log.Println(err)
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to update charges")
+        return
+    }
+	utils.WriteJSON(w, http.StatusOK, "success", response, "Charge updated successfully")
+
 }
 
 func getDomainURL(r *http.Request) string {
