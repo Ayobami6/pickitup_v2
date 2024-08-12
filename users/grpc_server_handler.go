@@ -185,6 +185,7 @@ func (h *usersGrpcHandler)CreditUserWallet(ctx context.Context, payload *userPb.
     }
     err = user.Credit(h.db, float64(charge))
     if err!= nil {
+		log.Printf("Failed to credit user wallet: %v", err)
         return nil, errors.New("failed to credit user wallet")
     }
     message := &userPb.ChargeResponse{}
@@ -206,10 +207,7 @@ func (h *usersGrpcHandler)VerifyOTP(ctx context.Context, payload *userPb.OTPVeri
         return nil, errors.New("failed to get cached otp")
     }
 	castedOtp := strconv.Itoa(cachedOtp)
-	fmt.Println("This is cached otp: ", cachedOtp)
-	fmt.Println("This otp: ", otp)
-	fmt.Printf("cachedOtp type: %T\n", cachedOtp)
-	fmt.Printf("otp type: %T\n", otp)
+	log.Printf("Cached OTP: %s, Provided OTP: %s \n", castedOtp, otp)
     if castedOtp != otp {
         return nil, errors.New("invalid otp")
     }
