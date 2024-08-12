@@ -46,3 +46,12 @@ func (u *UserRepoImpl) GetUserByID(id uint) (*User, error) {
     }
     return result, nil
 }
+
+func (u *UserRepoImpl) UpdateUser( updatedUser *User) error {
+    // update a user
+    res := u.db.Save(&updatedUser)
+    if res.Error!= nil {
+        return res.Error
+    }
+    return nil
+}

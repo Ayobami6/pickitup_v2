@@ -26,6 +26,7 @@ func (h *UserClientHandler) RegisterRoutes(router *mux.Router) {
     router.HandleFunc("/register", h.HandleRegister).Methods("POST")
     router.HandleFunc("/login", h.HandleLoginUser).Methods("POST")
     router.HandleFunc("/users/details", auth.Auth(h.HandleGetUserDetails, h.client)).Methods("GET")
+    router.HandleFunc("/users/otp/verify", h.HandleVerifyOTP).Methods("POST")
 }
 
 
@@ -96,4 +97,20 @@ func (h *UserClientHandler) HandleGetUserDetails(w http.ResponseWriter, r *http.
         return
     }
     utils.WriteJSON(w, http.StatusOK, "success", res, "User Details Retrieved Successfully")
+}
+
+func (h *UserClientHandler)HandleVerifyOTP(w http.ResponseWriter, r *http.Request){
+    // 
+    var verifyPayload pbUser.OTPVerifyPayload
+    err := utils.ParseJSON(r, &verifyPayload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, err.Error())
+        return
+    }
+    res, err := h.client.VerifyOTP(r.Context(), &verifyPayload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", res, "OTP verified successfully")
 }
