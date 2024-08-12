@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -184,9 +185,47 @@ func (h *usersGrpcHandler)CreditUserWallet(ctx context.Context, payload *userPb.
     }
     err = user.Credit(h.db, float64(charge))
     if err!= nil {
+		log.Printf("Failed to credit user wallet: %v", err)
         return nil, errors.New("failed to credit user wallet")
     }
     message := &userPb.ChargeResponse{}
+
+    return message, nil
+}
+
+// #8
+func (h *usersGrpcHandler)VerifyOTP(ctx context.Context, payload *userPb.OTPVerifyPayload) (*userPb.OTPVerifyResponse, error) {
+	email := payload.Email
+    otp := payload.Otp
+    user, err := h.repo.GetUserByEmail(email)
+    if err!= nil {
+        return nil, errors.New("user not found")
+    }
+//    get cached otp 
+    cachedOtp, err := utils.GetCachedVerificationCode(email)
+    if err!= nil {
+        return nil, errors.New("failed to get cached otp")
+    }
+	castedOtp := strconv.Itoa(cachedOtp)
+	log.Printf("Cached OTP: %s, Provided OTP: %s \n", castedOtp, otp)
+    if castedOtp != otp {
+        return nil, errors.New("invalid otp")
+    }
+	// update verification status
+	user.Verified = true
+    err = h.repo.UpdateUser(user)
+	if err!= nil {
+        return nil, errors.New("failed to update user verification status")
+    }
+	// credit user wallet #1000
+	err = user.Credit(h.db, float64(1000))
+    if err!= nil {
+        log.Println(err.Error())
+    }
+
+    message := &userPb.OTPVerifyResponse{
+        Message: "User verified successfully!",
+    }
 
     return message, nil
 }

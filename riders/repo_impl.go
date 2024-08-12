@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math"
 
@@ -49,7 +50,7 @@ func (r *RiderRepoImpl) GetRider(id uint) (*Rider, error) {
 
 func (r *RiderRepoImpl) GetRiderReviews(riderID uint) ([]Review, error) {
 	var reviews []Review
-    res := r.db.Where(Review{RiderID: riderID}).Find(&reviews)
+    res := r.db.Where(&Review{RiderID: riderID}).Find(&reviews)
     if res.Error!= nil {
         return nil, res.Error
     }
@@ -58,7 +59,7 @@ func (r *RiderRepoImpl) GetRiderReviews(riderID uint) ([]Review, error) {
 
 func (r *RiderRepoImpl)GetRiderByUserID(userID uint) (*Rider,error){
 	var rider Rider
-    res := r.db.Where(Rider{UserID: userID}).First(&rider)
+    res := r.db.Where(&Rider{UserID: userID}).First(&rider)
     if res.Error!= nil {
         return nil, res.Error
     }
@@ -78,7 +79,7 @@ func (r *RiderRepoImpl) GetRiderByID(id uint)(*Rider, error) {
 
 func (r *RiderRepoImpl)UpdateRating(riderID uint) error {
 	var rider Rider
-	res := r.db.Where(Rider{UserID: riderID}).First(&rider)
+	res := r.db.Where(&Rider{UserID: riderID}).First(&rider)
 	if res.Error!= nil {
         return res.Error
     }
@@ -107,15 +108,16 @@ func (r *RiderRepoImpl)UpdateRating(riderID uint) error {
 
 
 func (r *RiderRepoImpl)UpdateMinAndMaxCharge(minCharge float64, maxCharge float64, userID uint) error {
-	res := r.db.Where(Rider{UserID: userID}).Updates(Rider{MinimumCharge: minCharge, MaximumCharge: maxCharge})
+	res := r.db.Where(&Rider{UserID: userID}).Updates(&Rider{MinimumCharge: minCharge, MaximumCharge: maxCharge})
 	if res.Error!= nil {
+        fmt.Println(res)
         return res.Error
     }
 	return nil
 }
 
 func (r *RiderRepoImpl) UpdateRiderAvailability(riderId uint, status string) error {
-	res := r.db.Where(Rider{UserID: riderId}).Updates(Rider{AvailabilityStatus: RiderAvailabilityStatus(status)})
+	res := r.db.Where(&Rider{UserID: riderId}).Updates(&Rider{AvailabilityStatus: RiderAvailabilityStatus(status)})
     if res.Error!= nil {
         return res.Error
     }
