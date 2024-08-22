@@ -27,6 +27,8 @@ func (h *UserClientHandler) RegisterRoutes(router *mux.Router) {
     router.HandleFunc("/login", h.HandleLoginUser).Methods("POST")
     router.HandleFunc("/users/details", auth.Auth(h.HandleGetUserDetails, h.client)).Methods("GET")
     router.HandleFunc("/users/otp/verify", h.HandleVerifyOTP).Methods("POST")
+    router.HandleFunc("/users/otp/resend", h.ResendOTP).Methods("POST")
+    router.HandleFunc("/users/wallet/balance", auth.Auth(h.GetWalletBalance, h.client)).Methods("GET")
 }
 
 
@@ -113,4 +115,37 @@ func (h *UserClientHandler)HandleVerifyOTP(w http.ResponseWriter, r *http.Reques
         return
     }
     utils.WriteJSON(w, http.StatusOK, "success", res, "OTP verified successfully")
+}
+
+func (h *UserClientHandler)ResendOTP(w http.ResponseWriter, r *http.Request) {
+    var OTPResendPayload pbUser.OTPResendPayload
+    err := utils.ParseJSON(r, &OTPResendPayload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, err.Error())
+        return
+    }
+    res, err := h.client.ResendOTP(r.Context(), &OTPResendPayload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", res, "OTP resent successfully")
+}
+
+
+func (h *UserClientHandler)GetWalletBalance(w http.ResponseWriter, r *http.Request){
+    // get user id from request context
+    userID := auth.GetUserIDFromContext(r.Context())
+    if userID == -1 {
+        auth.Forbidden(w)
+        return
+    }
+    res, err := h.client.GetWalletBalance(r.Context(), &pbUser.WalletBalanceRequest{
+        UserId: int64(userID),
+    })
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to get wallet balance")
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", res, "Wallet Balance Retrieved Successfully")
 }

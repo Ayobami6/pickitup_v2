@@ -229,3 +229,74 @@ func (h *usersGrpcHandler)VerifyOTP(ctx context.Context, payload *userPb.OTPVeri
 
     return message, nil
 }
+
+func (h *usersGrpcHandler)ResendOTP(ctx context.Context, pl *userPb.OTPResendPayload) (*userPb.OTPResendResponse, error) {
+	email := pl.Email
+    // get the user 
+    user, err := h.repo.GetUserByEmail(email)
+    if err!= nil {
+        return nil, errors.New("user not found")
+    }
+	username := user.UserName
+    num, err := utils.GenerateAndCacheVerificationCode(email)
+    if err!= nil {
+        log.Println("Generate Code Failed: ", err)
+    } else {
+		// send the email to verify
+		msg := fmt.Sprintf("Your verification code is %d\n", num)
+		ch := h.ch
+		// declare email verification queue
+		q, err := ch.QueueDeclare(
+            "email_verification",         
+            false,               
+            false,               
+            false,               
+            false,               
+            nil,                 
+        )
+        if err!= nil {
+            log.Fatalf("Failed to declare queue: %v", err)
+        }
+		mailData := map[string]string{
+			"username": username,
+            "message": msg,
+			"email": email,
+			"subject": "Email Verification",
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		body, err := json.Marshal(mailData)
+		if err != nil {
+			log.Println("Failed to marshal data", err)
+		}
+		err = ch.PublishWithContext(ctx,
+			"",     
+			q.Name,
+			false,
+			false,
+			amqp.Publishing {
+			  ContentType: "application/json",
+			  Body:        body,
+			})
+		if err!= nil {
+			log.Println("Failed to publish a message", err)
+		}
+	}
+	return &userPb.OTPResendResponse{
+		Message: fmt.Sprintf("New OTP has been sent to your email %s", email),
+	}, nil
+
+}
+
+func (h *usersGrpcHandler)GetWalletBalance(ctx context.Context, pl *userPb.WalletBalanceRequest) (*userPb.WalletBalanceResponse, error) {
+	userId := pl.UserId
+    user, err := h.repo.GetUserByID(uint(userId))
+    if err!= nil {
+        return nil, errors.New("user not found")
+    }
+    message := &userPb.WalletBalanceResponse{
+        Balance: float32(user.WalletBalance),
+    }
+
+    return message, nil
+}

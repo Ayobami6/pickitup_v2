@@ -79,7 +79,9 @@ message OTPResendResponse {
     string message = 1;
 }
 
-message WalletBalanceRequest {}
+message WalletBalanceRequest {
+    int64 user_id = 1;
+}
 
 message WalletBalanceResponse {
     float balance = 1;
