@@ -37,6 +37,7 @@ func (h *OrderClientHandler)RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/orders/{id}", auth.Auth(h.HandleGetOrder, h.userClient)).Methods("GET")
 	router.HandleFunc("/orders/{id}/delivery", auth.UserAuth(h.HandleUpdateDeliveryStatus, h.riderClient)).Methods("PATCH")
 	router.HandleFunc("/orders/{id}/acknowledge", auth.RiderAuth(h.HandleUpdateAcknowledgement, h.riderClient)).Methods("PATCH")
+	router.HandleFunc("/orders/{id}/cancel", auth.UserAuth(h.CancelOrder, h.riderClient)).Methods("DELETE")
 }
 
 func (h *OrderClientHandler) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -366,4 +367,30 @@ func (h *OrderClientHandler)HandleUpdateAcknowledgement(w http.ResponseWriter, r
     }
     utils.WriteJSON(w, http.StatusOK, "success", nil, "Acknowledgement status updated successfully")
 
+}
+
+func (h *OrderClientHandler) CancelOrder(w http.ResponseWriter, r *http.Request) {
+	// get user id from request context
+	userId := auth.GetUserIDFromContext(r.Context())
+	if userId == -1 {
+        auth.Forbidden(w)
+        return
+    }
+	// get order id from param
+    params := mux.Vars(r)
+    id, err := strconv.Atoi(params["id"])
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid order id")
+        return
+    }
+    ctx := r.Context()
+    _, err = h.client.CancelPendingOrder(ctx, &pb.CancelPendingOrderRequest{
+		OrderId: int64(id),
+		UserId: int64(userId),
+    })
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, "Failed to cancel order")
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", nil, "Order cancelled successfully")
 }

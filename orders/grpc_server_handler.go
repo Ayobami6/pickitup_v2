@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	pb "github.com/Ayobami6/common/proto/orders"
@@ -125,4 +126,31 @@ func (h *orderGrpcHandler) UpdateAcknowledgement(ctx context.Context, payload *p
     }
 	return &pb.UpdateResponse{Message: "Acknowledgement status updated successfully"}, nil
 
+}
+
+func (h *orderGrpcHandler)CancelPendingOrder(ctx context.Context, pl *pb.CancelPendingOrderRequest) (*pb.CancelPendingOrderResponse, error){
+	// get user id and order id from payload
+	userId := pl.UserId
+    orderId := pl.OrderId
+
+    // find the order
+    order, err := h.repo.GetOrderByID(uint(orderId))
+    if err!= nil {
+        log.Println("Error getting order: ", err)
+        return nil, err
+    }
+
+    // check if the order belongs to the user and is pending
+    if order.UserID!= uint(userId) || order.Status!= Pending {
+        return nil, errors.New("user does not own the order or order is not pending")
+    }
+
+    // cancel the order
+    err = h.repo.CancelOrder(uint(orderId))
+    if err!= nil {
+        log.Println("Error canceling order: ", err)
+        return nil, err
+    }
+
+    return &pb.CancelPendingOrderResponse{Message: "Order cancelled successfully"}, nil
 }

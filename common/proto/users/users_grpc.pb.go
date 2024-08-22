@@ -29,6 +29,8 @@ type UserServiceClient interface {
 	ChargeUserWallet(ctx context.Context, in *ChargeRequest, opts ...grpc.CallOption) (*ChargeResponse, error)
 	CreditUserWallet(ctx context.Context, in *ChargeRequest, opts ...grpc.CallOption) (*ChargeResponse, error)
 	VerifyOTP(ctx context.Context, in *OTPVerifyPayload, opts ...grpc.CallOption) (*OTPVerifyResponse, error)
+	ResendOTP(ctx context.Context, in *OTPResendPayload, opts ...grpc.CallOption) (*OTPResendResponse, error)
+	GetWalletBalance(ctx context.Context, in *WalletBalanceRequest, opts ...grpc.CallOption) (*WalletBalanceResponse, error)
 }
 
 type userServiceClient struct {
@@ -102,6 +104,24 @@ func (c *userServiceClient) VerifyOTP(ctx context.Context, in *OTPVerifyPayload,
 	return out, nil
 }
 
+func (c *userServiceClient) ResendOTP(ctx context.Context, in *OTPResendPayload, opts ...grpc.CallOption) (*OTPResendResponse, error) {
+	out := new(OTPResendResponse)
+	err := c.cc.Invoke(ctx, "/proto.UserService/ResendOTP", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetWalletBalance(ctx context.Context, in *WalletBalanceRequest, opts ...grpc.CallOption) (*WalletBalanceResponse, error) {
+	out := new(WalletBalanceResponse)
+	err := c.cc.Invoke(ctx, "/proto.UserService/GetWalletBalance", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -113,6 +133,8 @@ type UserServiceServer interface {
 	ChargeUserWallet(context.Context, *ChargeRequest) (*ChargeResponse, error)
 	CreditUserWallet(context.Context, *ChargeRequest) (*ChargeResponse, error)
 	VerifyOTP(context.Context, *OTPVerifyPayload) (*OTPVerifyResponse, error)
+	ResendOTP(context.Context, *OTPResendPayload) (*OTPResendResponse, error)
+	GetWalletBalance(context.Context, *WalletBalanceRequest) (*WalletBalanceResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -140,6 +162,12 @@ func (UnimplementedUserServiceServer) CreditUserWallet(context.Context, *ChargeR
 }
 func (UnimplementedUserServiceServer) VerifyOTP(context.Context, *OTPVerifyPayload) (*OTPVerifyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyOTP not implemented")
+}
+func (UnimplementedUserServiceServer) ResendOTP(context.Context, *OTPResendPayload) (*OTPResendResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResendOTP not implemented")
+}
+func (UnimplementedUserServiceServer) GetWalletBalance(context.Context, *WalletBalanceRequest) (*WalletBalanceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWalletBalance not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -280,6 +308,42 @@ func _UserService_VerifyOTP_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ResendOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OTPResendPayload)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ResendOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.UserService/ResendOTP",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ResendOTP(ctx, req.(*OTPResendPayload))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetWalletBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WalletBalanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetWalletBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.UserService/GetWalletBalance",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetWalletBalance(ctx, req.(*WalletBalanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -314,6 +378,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyOTP",
 			Handler:    _UserService_VerifyOTP_Handler,
+		},
+		{
+			MethodName: "ResendOTP",
+			Handler:    _UserService_ResendOTP_Handler,
+		},
+		{
+			MethodName: "GetWalletBalance",
+			Handler:    _UserService_GetWalletBalance_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

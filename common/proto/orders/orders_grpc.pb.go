@@ -27,6 +27,7 @@ type OrderServiceClient interface {
 	GetOrders(ctx context.Context, in *AllOderRequest, opts ...grpc.CallOption) (*AllOrderReponse, error)
 	UpdateDeliveryStatus(ctx context.Context, in *UpdateDeliveryStatusRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 	UpdateAcknowledgement(ctx context.Context, in *UpdateAcknowledgementRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
+	CancelPendingOrder(ctx context.Context, in *CancelPendingOrderRequest, opts ...grpc.CallOption) (*CancelPendingOrderResponse, error)
 }
 
 type orderServiceClient struct {
@@ -82,6 +83,15 @@ func (c *orderServiceClient) UpdateAcknowledgement(ctx context.Context, in *Upda
 	return out, nil
 }
 
+func (c *orderServiceClient) CancelPendingOrder(ctx context.Context, in *CancelPendingOrderRequest, opts ...grpc.CallOption) (*CancelPendingOrderResponse, error) {
+	out := new(CancelPendingOrderResponse)
+	err := c.cc.Invoke(ctx, "/proto.OrderService/CancelPendingOrder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility
@@ -91,6 +101,7 @@ type OrderServiceServer interface {
 	GetOrders(context.Context, *AllOderRequest) (*AllOrderReponse, error)
 	UpdateDeliveryStatus(context.Context, *UpdateDeliveryStatusRequest) (*UpdateResponse, error)
 	UpdateAcknowledgement(context.Context, *UpdateAcknowledgementRequest) (*UpdateResponse, error)
+	CancelPendingOrder(context.Context, *CancelPendingOrderRequest) (*CancelPendingOrderResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -112,6 +123,9 @@ func (UnimplementedOrderServiceServer) UpdateDeliveryStatus(context.Context, *Up
 }
 func (UnimplementedOrderServiceServer) UpdateAcknowledgement(context.Context, *UpdateAcknowledgementRequest) (*UpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAcknowledgement not implemented")
+}
+func (UnimplementedOrderServiceServer) CancelPendingOrder(context.Context, *CancelPendingOrderRequest) (*CancelPendingOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelPendingOrder not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 
@@ -216,6 +230,24 @@ func _OrderService_UpdateAcknowledgement_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_CancelPendingOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelPendingOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).CancelPendingOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.OrderService/CancelPendingOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).CancelPendingOrder(ctx, req.(*CancelPendingOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -242,6 +274,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateAcknowledgement",
 			Handler:    _OrderService_UpdateAcknowledgement_Handler,
+		},
+		{
+			MethodName: "CancelPendingOrder",
+			Handler:    _OrderService_CancelPendingOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

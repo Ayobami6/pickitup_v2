@@ -71,6 +71,23 @@ message OTPVerifyResponse {
     string message = 1;;
 }
 
+message OTPResendPayload {
+    string email = 1;
+}
+
+message OTPResendResponse {
+    string message = 1;
+}
+
+message WalletBalanceRequest {
+    int64 user_id = 1;
+}
+
+message WalletBalanceResponse {
+    float balance = 1;
+    string message = 2;
+}
+
 service UserService {
     rpc RegisterUser (UserRegistrationPayload) returns (RegisterMessage) {};
     rpc LoginUser (UserLoginPayload) returns (LoginResponse) {};
@@ -79,4 +96,6 @@ service UserService {
     rpc ChargeUserWallet (ChargeRequest) returns (ChargeResponse) {};
     rpc CreditUserWallet(ChargeRequest) returns (ChargeResponse) {};
     rpc VerifyOTP(OTPVerifyPayload) returns(OTPVerifyResponse){};
+    rpc ResendOTP(OTPResendPayload) returns(OTPResendResponse){};
+    rpc GetWalletBalance(WalletBalanceRequest) returns(WalletBalanceResponse){};
 }

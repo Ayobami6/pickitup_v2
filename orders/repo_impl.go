@@ -40,3 +40,7 @@ func (o *OrderRepoImpl) UpdateDeliveryStatus(orderID uint, status StatusType) (e
 func (o *OrderRepoImpl) UpdateAcknowledgeStatus(orderID uint) (error) {
     return o.db.Model(&Order{}).Where("id = ?", orderID).Update("acknowledge", true).Error
 }
+
+func (o *OrderRepoImpl) CancelOrder(orderId uint) (error) {
+	return o.db.Delete(&Order{}, orderId).Error
+}
