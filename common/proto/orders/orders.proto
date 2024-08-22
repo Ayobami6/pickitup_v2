@@ -57,10 +57,18 @@ message AllOrderReponse {
 }
 
 
+message CancelPendingOrderRequest{}
+
+message CancelPendingOrderResponse {
+    string message = 1;
+}
+
+
 service OrderService {
     rpc CreateOrder (CreateOrderRequest) returns (OrderResponse) {}
     rpc GetOrder (GetOrderRequest) returns (OrderResponse) {}
     rpc GetOrders (AllOderRequest) returns (AllOrderReponse) {}
     rpc UpdateDeliveryStatus (UpdateDeliveryStatusRequest) returns (UpdateResponse) {}
     rpc UpdateAcknowledgement (UpdateAcknowledgementRequest) returns (UpdateResponse) {}
+    rpc CancelPendingOrder (CancelPendingOrderRequest) returns (CancelPendingOrderResponse) {}
 }
