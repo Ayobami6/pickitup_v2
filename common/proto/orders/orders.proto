@@ -57,7 +57,10 @@ message AllOrderReponse {
 }
 
 
-message CancelPendingOrderRequest{}
+message CancelPendingOrderRequest{
+    int64 order_id = 1;
+    int64 user_id = 2;
+}
 
 message CancelPendingOrderResponse {
     string message = 1;

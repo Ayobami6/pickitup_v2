@@ -6,4 +6,5 @@ type OrderRepo interface {
 	UpdateDeliveryStatus(orderId uint, status StatusType) error
 	UpdateAcknowledgeStatus(orderId uint) error
 	GetOrderByID(orderId uint) (*Order, error)
+	CancelOrder(orderId uint) error
 }
