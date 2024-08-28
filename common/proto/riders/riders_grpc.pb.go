@@ -30,6 +30,7 @@ type RiderServiceClient interface {
 	UpdateMinAndMaxCharge(ctx context.Context, in *ChargeUpdatePayload, opts ...grpc.CallOption) (*ResponseMessage, error)
 	UpdateAvailabilityStatus(ctx context.Context, in *UpdateAvailabiltyStatusPayLoad, opts ...grpc.CallOption) (*ResponseMessage, error)
 	UpdateRiderSuccessfulRides(ctx context.Context, in *UpdateRiderSuccessfulRidesRequest, opts ...grpc.CallOption) (*UpdateRiderResponse, error)
+	CreateRating(ctx context.Context, in *CreateRatingPayload, opts ...grpc.CallOption) (*CreateRatingPayloadResponse, error)
 }
 
 type riderServiceClient struct {
@@ -112,6 +113,15 @@ func (c *riderServiceClient) UpdateRiderSuccessfulRides(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *riderServiceClient) CreateRating(ctx context.Context, in *CreateRatingPayload, opts ...grpc.CallOption) (*CreateRatingPayloadResponse, error) {
+	out := new(CreateRatingPayloadResponse)
+	err := c.cc.Invoke(ctx, "/proto.RiderService/CreateRating", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RiderServiceServer is the server API for RiderService service.
 // All implementations must embed UnimplementedRiderServiceServer
 // for forward compatibility
@@ -124,6 +134,7 @@ type RiderServiceServer interface {
 	UpdateMinAndMaxCharge(context.Context, *ChargeUpdatePayload) (*ResponseMessage, error)
 	UpdateAvailabilityStatus(context.Context, *UpdateAvailabiltyStatusPayLoad) (*ResponseMessage, error)
 	UpdateRiderSuccessfulRides(context.Context, *UpdateRiderSuccessfulRidesRequest) (*UpdateRiderResponse, error)
+	CreateRating(context.Context, *CreateRatingPayload) (*CreateRatingPayloadResponse, error)
 	mustEmbedUnimplementedRiderServiceServer()
 }
 
@@ -154,6 +165,9 @@ func (UnimplementedRiderServiceServer) UpdateAvailabilityStatus(context.Context,
 }
 func (UnimplementedRiderServiceServer) UpdateRiderSuccessfulRides(context.Context, *UpdateRiderSuccessfulRidesRequest) (*UpdateRiderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRiderSuccessfulRides not implemented")
+}
+func (UnimplementedRiderServiceServer) CreateRating(context.Context, *CreateRatingPayload) (*CreateRatingPayloadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRating not implemented")
 }
 func (UnimplementedRiderServiceServer) mustEmbedUnimplementedRiderServiceServer() {}
 
@@ -312,6 +326,24 @@ func _RiderService_UpdateRiderSuccessfulRides_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RiderService_CreateRating_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRatingPayload)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).CreateRating(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.RiderService/CreateRating",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).CreateRating(ctx, req.(*CreateRatingPayload))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RiderService_ServiceDesc is the grpc.ServiceDesc for RiderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -350,6 +382,10 @@ var RiderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateRiderSuccessfulRides",
 			Handler:    _RiderService_UpdateRiderSuccessfulRides_Handler,
+		},
+		{
+			MethodName: "CreateRating",
+			Handler:    _RiderService_CreateRating_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

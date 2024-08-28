@@ -3,8 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Ayobami6/common/auth"
+	pbRider "github.com/Ayobami6/common/proto/riders"
 	pbUser "github.com/Ayobami6/common/proto/users"
 	"github.com/Ayobami6/common/utils"
 	"github.com/gorilla/mux"
@@ -14,10 +16,11 @@ import (
 
 type UserClientHandler struct {
 	client pbUser.UserServiceClient
+    riderClient pbRider.RiderServiceClient
 }
 
-func NewUserClientHandler(client pbUser.UserServiceClient) *UserClientHandler {
-    return &UserClientHandler{client: client}
+func NewUserClientHandler(client pbUser.UserServiceClient, riderClient pbRider.RiderServiceClient) *UserClientHandler {
+    return &UserClientHandler{client: client, riderClient: riderClient}
 }
 
 // Implement register routes
@@ -29,6 +32,7 @@ func (h *UserClientHandler) RegisterRoutes(router *mux.Router) {
     router.HandleFunc("/users/otp/verify", h.HandleVerifyOTP).Methods("POST")
     router.HandleFunc("/users/otp/resend", h.ResendOTP).Methods("POST")
     router.HandleFunc("/users/wallet/balance", auth.Auth(h.GetWalletBalance, h.client)).Methods("GET")
+    router.HandleFunc("/users/{rider_id}/ratings", auth.UserAuth(h.handleGiveRatings, h.riderClient)).Methods("POST")
 }
 
 
@@ -148,4 +152,31 @@ func (h *UserClientHandler)GetWalletBalance(w http.ResponseWriter, r *http.Reque
         return
     }
     utils.WriteJSON(w, http.StatusOK, "success", res, "Wallet Balance Retrieved Successfully")
+}
+
+func (h *UserClientHandler)handleGiveRatings(w http.ResponseWriter, r *http.Request) {
+    // get rider id from url
+    vars := mux.Vars(r)
+    id := vars["rider_id"]
+    riderID, err := strconv.Atoi(id)
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, "Invalid ID")
+        return
+    }
+    payload := &pbRider.CreateRatingPayload{
+        RiderId: int64(riderID),
+    }
+    // parse the request body with the payload
+    err = utils.ParseJSON(r, payload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusBadRequest, err.Error())
+        return
+    }
+    // call the rider service to create a rating
+    res, err := h.riderClient.CreateRating(r.Context(), payload)
+    if err!= nil {
+        utils.WriteError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, "success", res, "Rating Created Successfully")
 }

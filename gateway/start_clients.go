@@ -34,8 +34,7 @@ func StartGateway() {
 	defer uconn.Close()
 	log.Println("Dailing user service at ", userServiceAddr)
 	uClient := pbUser.NewUserServiceClient(uconn)
-	userHandler := NewUserClientHandler(uClient)
-	userHandler.RegisterRoutes(subrouter)
+	
 
 	log.Printf("Server is listening on %s", httpAddr)
 	RiderServiceAddr, err := utils.GetServiceAddress("rider-service")
@@ -52,6 +51,8 @@ func StartGateway() {
 	uC := pbUser.NewUserServiceClient(uconn)
 	riderHandler := NewRiderClientHandler(rC, uC)
 	riderHandler.RegisterRoutes(subrouter)
+	userHandler := NewUserClientHandler(uClient, rC)
+	userHandler.RegisterRoutes(subrouter)
 
 	// Order Service
 	orderServiceAddr, err := utils.GetServiceAddress("order-service")

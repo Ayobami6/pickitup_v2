@@ -133,3 +133,13 @@ func (r *RiderRepoImpl)UpdateRiderSuccessfulRides(riderId uint) error {
     rider.UpdateSuccessfulRides(r.db)
     return nil
 }
+
+
+func (r *RiderRepoImpl)CreateRating(review *Review)error {
+    res := r.db.Create(&review)
+    if res.Error!= nil {
+        log.Println("Unable to create rating: ", res.Error)
+        return res.Error
+    }
+    return nil
+}

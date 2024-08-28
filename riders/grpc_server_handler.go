@@ -176,3 +176,20 @@ func (h *riderGrpcHandler)UpdateAvailabilityStatus(ctx context.Context, pl *ride
 	return &riderPb.ResponseMessage{Message: "Rider's availability status successfully updated!"}, nil
 
 }
+
+func (h *riderGrpcHandler)CreateRating(ctx context.Context, in *riderPb.CreateRatingPayload)(*riderPb.CreateRatingPayloadResponse, error){
+	riderId := in.RiderId
+	comment := in.Comment
+	rating := uint(in.Rating)
+	// create the rating with the repo
+	err := h.repo.CreateRating(&Review{
+		RiderID: uint(riderId),
+		Comment: comment,
+        Rating:  float64(rating),
+    })
+    if err!= nil {
+        log.Printf("Couldn't create rider's rating %v \n", err.Error())
+        return nil, err
+    }
+    return &riderPb.CreateRatingPayloadResponse{}, nil
+}
