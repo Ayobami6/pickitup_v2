@@ -191,5 +191,11 @@ func (h *riderGrpcHandler)CreateRating(ctx context.Context, in *riderPb.CreateRa
         log.Printf("Couldn't create rider's rating %v \n", err.Error())
         return nil, err
     }
+	// update rider rating
+	err = h.repo.UpdateRating(uint(riderId))
+    if err!= nil {
+        log.Printf("Couldn't update rider's rating %v \n", err.Error())
+        return nil, err
+    }
     return &riderPb.CreateRatingPayloadResponse{}, nil
 }

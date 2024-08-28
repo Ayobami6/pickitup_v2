@@ -79,7 +79,7 @@ func (r *RiderRepoImpl) GetRiderByID(id uint)(*Rider, error) {
 
 func (r *RiderRepoImpl)UpdateRating(riderID uint) error {
 	var rider Rider
-	res := r.db.Where(&Rider{UserID: riderID}).First(&rider)
+	res := r.db.Where(&Rider{ID: riderID}).First(&rider)
 	if res.Error!= nil {
         return res.Error
     }
